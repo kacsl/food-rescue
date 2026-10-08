@@ -55,7 +55,12 @@ export function BagNavIcon({ selected = false }: { selected?: boolean }) {
   );
 }
 
-/** Bell Icon from Heroicons library for notifications */
+/**
+ * Notifications icon for bottom navigation tab.
+ * Tokens:
+ * - Unselected: heroicons-outline/bell (outline notifications icon token)
+ * - Selected: heroicons-solid/bell (filled notifications icon token)
+ */
 export function BellNavIcon({ selected = false }: { selected?: boolean }) {
   if (selected) {
     return (
@@ -63,6 +68,7 @@ export function BellNavIcon({ selected = false }: { selected?: boolean }) {
         width={24}
         height={24}
         aria-hidden="true"
+        data-token="heroicons-solid/bell"
         style={{
           color: "var(--color-icon-primary, #303036)",
           transition: "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
@@ -76,6 +82,7 @@ export function BellNavIcon({ selected = false }: { selected?: boolean }) {
       width={24}
       height={24}
       aria-hidden="true"
+      data-token="heroicons-outline/bell"
       style={{
         color: "var(--color-text-tertiary, #75757d)",
         transition: "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
@@ -85,9 +92,17 @@ export function BellNavIcon({ selected = false }: { selected?: boolean }) {
 }
 
 /**
- * C49 - Bottom Navigation Component
- * Strictly synchronized with Figma Page 3035:7430 (C49 - Bottom navigation)
- * Extended with Heroicons notifications support and soft interactive micro-interactions.
+ * C49 - Bottom navigation
+ *
+ * Description:
+ * Bottom navigation bar with glassmorphic pill container.
+ * - Food Nearby tab: Store icon
+ * - My donations tab: Bag icon
+ * - Notifications tab:
+ *   - Unselected: heroicons-outline/bell (outline notifications icon token)
+ *   - Selected: heroicons-solid/bell (filled notifications icon token)
+ *
+ * Synchronized with Figma C49 - Bottom navigation (Page 3035:7430).
  */
 export function BottomNav({
   items,
