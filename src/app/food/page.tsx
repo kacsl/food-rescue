@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Chip } from "valere-DS";
 import { KariAvatar } from "@/components/ds/avatar";
 import { ListingCard, NearbyCard, type Donation, type NearbyFood } from "@/components/food/cards";
 import { PhoneFrame, type FoodScreen } from "@/components/food/phone-frame";
@@ -14,7 +15,7 @@ import {
   type DonationTab,
   type FoodNotification,
 } from "@/components/food/panels";
-import { BellIcon } from "@heroicons/react/24/outline";
+import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
 
 const NEARBY: NearbyFood[] = [
   {
@@ -51,6 +52,7 @@ const INITIAL_NOTIFICATIONS: FoodNotification[] = [
     time: "10m ago",
     read: false,
     type: "pickup",
+    category: "food_nearby",
     actionLabel: "Confirm pickup time",
   },
   {
@@ -60,6 +62,7 @@ const INITIAL_NOTIFICATIONS: FoodNotification[] = [
     time: "1h ago",
     read: false,
     type: "interest",
+    category: "donation",
     actionLabel: "Manage donation",
   },
   {
@@ -69,6 +72,7 @@ const INITIAL_NOTIFICATIONS: FoodNotification[] = [
     time: "3h ago",
     read: true,
     type: "reminder",
+    category: "food_nearby",
   },
   {
     id: "notif-4",
@@ -77,6 +81,7 @@ const INITIAL_NOTIFICATIONS: FoodNotification[] = [
     time: "Yesterday",
     read: true,
     type: "system",
+    category: "donation",
   },
 ];
 
@@ -274,6 +279,7 @@ export default function FoodPage() {
           onQuery={setQuery}
           onOpen={(item) => {
             markNotificationRead(item.id);
+            // Open sheet without resetting filter if in unread mode
             setSelectedNotif(item);
           }}
         />
@@ -413,63 +419,19 @@ function NotificationsView({
 
         {/* Filter and Mark Read actions */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-          <div role="tablist" aria-label="Notification filter" style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "all"}
-              onClick={() => onFilter("all")}
-              style={{
-                border: "none",
-                background: filter === "all" ? "var(--color-action-primary, #dc2b10)" : "var(--color-background-muted, #f2f2f6)",
-                color: filter === "all" ? "#ffffff" : "var(--color-text-secondary, #5c5c63)",
-                padding: "6px 14px",
-                borderRadius: "9999px",
-                fontSize: "var(--font-size-body-sm)",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "background 0.18s ease, color 0.18s ease, transform 0.18s ease",
-              }}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "unread"}
-              onClick={() => onFilter("unread")}
-              style={{
-                border: "none",
-                background: filter === "unread" ? "var(--color-action-primary, #dc2b10)" : "var(--color-background-muted, #f2f2f6)",
-                color: filter === "unread" ? "#ffffff" : "var(--color-text-secondary, #5c5c63)",
-                padding: "6px 14px",
-                borderRadius: "9999px",
-                fontSize: "var(--font-size-body-sm)",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                transition: "background 0.18s ease, color 0.18s ease, transform 0.18s ease",
-              }}
-            >
-              Unread
-              {unreadCount > 0 ? (
-                <span
-                  style={{
-                    background: filter === "unread" ? "#ffffff" : "var(--color-action-primary, #dc2b10)",
-                    color: filter === "unread" ? "var(--color-action-primary, #dc2b10)" : "#ffffff",
-                    borderRadius: "9999px",
-                    paddingInline: 5,
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    lineHeight: "14px",
-                  }}
-                >
-                  {unreadCount}
-                </span>
-              ) : null}
-            </button>
+          <div role="tablist" aria-label="Notification filter" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span role="tab" aria-selected={filter === "all"} onClick={() => onFilter("all")}>
+              <Chip
+                label="All"
+                selected={filter === "all" ? "True" : "False"}
+              />
+            </span>
+            <span role="tab" aria-selected={filter === "unread"} onClick={() => onFilter("unread")}>
+              <Chip
+                label={unreadCount > 0 ? `Unread (${unreadCount})` : "Unread"}
+                selected={filter === "unread" ? "True" : "False"}
+              />
+            </span>
           </div>
 
           {unreadCount > 0 ? (
@@ -484,7 +446,7 @@ function NotificationsView({
                 fontWeight: 600,
                 cursor: "pointer",
                 padding: "4px 8px",
-                textDecoration: "underline",
+                textDecoration: "none",
               }}
             >
               Mark all read
@@ -513,93 +475,104 @@ function NotificationsView({
         {items.length === 0 ? (
           <Empty>{filter === "unread" ? "You're all caught up! No unread notifications." : "No notifications found."}</Empty>
         ) : (
-          items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onOpen(item)}
-              aria-label={`View notification: ${item.title}`}
-              className="food-card-interactive"
-              style={{
-                width: "100%",
-                padding: 16,
-                margin: 0,
-                textAlign: "left",
-                font: "inherit",
-                color: "inherit",
-                cursor: "pointer",
-                background: item.read ? "rgba(255, 255, 255, 0.45)" : "#ffffff",
-                border: item.read
-                  ? "1px solid var(--color-border-subtle, #e6e7ed)"
-                  : "1.5px solid var(--color-action-primary, #dc2b10)",
-                borderRadius: "var(--radius-card, 16px)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                backdropFilter: "blur(25px)",
-                WebkitBackdropFilter: "blur(25px)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "9999px",
-                      background: item.read ? "var(--color-background-muted, #f2f2f6)" : "var(--color-background-brand-subtle, #ffedec)",
-                      color: item.read ? "var(--color-text-secondary, #5c5c63)" : "var(--color-action-primary, #dc2b10)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <BellIcon width={16} height={16} aria-hidden="true" />
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "var(--font-size-body-base, 16px)",
-                      fontWeight: item.read ? 500 : 700,
-                      color: "var(--color-text-primary, #303036)",
-                    }}
-                  >
-                    {item.title}
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                  <span style={{ fontSize: "var(--font-size-body-xs, 12px)", color: "var(--color-text-tertiary, #75757d)" }}>
-                    {item.time}
-                  </span>
-                  {!item.read ? (
-                    <span
-                      className="food-unread-dot"
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "9999px",
-                        background: "var(--color-action-primary, #dc2b10)",
-                        display: "inline-block",
-                      }}
-                    />
-                  ) : null}
-                </div>
-              </div>
-
-              <p
+          items.map((item) => {
+            const isDonation = item.category === "donation";
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onOpen(item)}
+                aria-label={`View notification: ${item.title}`}
+                className="food-card-interactive"
                 style={{
+                  width: "100%",
+                  padding: 16,
                   margin: 0,
-                  fontSize: "var(--font-size-body-sm, 14px)",
-                  color: "var(--color-text-secondary, #5c5c63)",
-                  lineHeight: 1.45,
-                  paddingLeft: 36,
+                  textAlign: "left",
+                  font: "inherit",
+                  color: "inherit",
+                  cursor: "pointer",
+                  background: item.read ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.45)",
+                  border: item.read
+                    ? "1px solid var(--color-border-subtle, #e6e7ed)"
+                    : "1.5px solid var(--color-action-primary, #dc2b10)",
+                  borderRadius: "var(--radius-card, 16px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  backdropFilter: "blur(25px)",
+                  WebkitBackdropFilter: "blur(25px)",
                 }}
               >
-                {item.message}
-              </p>
-            </button>
-          ))
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "9999px",
+                        background: item.read ? "var(--color-background-muted, #f2f2f6)" : "var(--color-background-brand-subtle, #ffedec)",
+                        color: item.read ? "var(--color-text-secondary, #5c5c63)" : "var(--color-action-primary, #dc2b10)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isDonation ? (
+                        <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
+                          <BagNavIcon selected={!item.read} />
+                        </span>
+                      ) : (
+                        <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
+                          <StoreNavIcon selected={!item.read} />
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "var(--font-size-body-base, 16px)",
+                        fontWeight: item.read ? 500 : 700,
+                        color: "var(--color-text-primary, #303036)",
+                      }}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    <span style={{ fontSize: "var(--font-size-body-xs, 12px)", color: "var(--color-text-tertiary, #75757d)" }}>
+                      {item.time}
+                    </span>
+                    {!item.read ? (
+                      <span
+                        className="food-unread-dot"
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "9999px",
+                          background: "var(--color-action-primary, #dc2b10)",
+                          display: "inline-block",
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "var(--font-size-body-sm, 14px)",
+                    color: "var(--color-text-secondary, #5c5c63)",
+                    lineHeight: 1.45,
+                    paddingLeft: 42,
+                  }}
+                >
+                  {item.message}
+                </p>
+              </button>
+            );
+          })
         )}
       </section>
     </>

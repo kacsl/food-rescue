@@ -260,6 +260,14 @@
   }
 }
 
-.food-unread-dot {
-  animation: pulseUnreadDot 2s infinite ease-in-out;
+.food-card-glass {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  border: 1px solid var(--color-border-subtle, #e6e7ed) !important;
+}
+
+.food-card-glass--unread {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border: 1.5px solid var(--color-action-primary, #dc2b10) !important;
 }

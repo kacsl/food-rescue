@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Button, IconButton } from "valere-DS";
 import type { Donation, NearbyFood } from "./cards";
+import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
 
 export type DonationTab = "open" | "closed" | "all";
 
@@ -213,6 +214,7 @@ export type FoodNotification = {
   time: string;
   read: boolean;
   type: "pickup" | "interest" | "reminder" | "system";
+  category?: "food_nearby" | "donation";
   actionLabel?: string;
 };
 
@@ -225,9 +227,32 @@ export function NotificationDetail({
   onClose: () => void;
   onAction?: () => void;
 }) {
+  const isDonation = item.category === "donation";
   return (
     <Sheet title={item.title} onClose={onClose}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "9999px",
+            background: "var(--color-background-brand-subtle, #ffedec)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          {isDonation ? (
+            <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
+              <BagNavIcon selected />
+            </span>
+          ) : (
+            <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
+              <StoreNavIcon selected />
+            </span>
+          )}
+        </div>
         <span
           style={{
             fontSize: "var(--font-size-body-xs)",
