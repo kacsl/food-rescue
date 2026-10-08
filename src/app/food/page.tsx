@@ -12,58 +12,160 @@ import {
   NewDonationSheet,
   NotificationDetail,
   SearchField,
+  ClaimHandoffSheet,
+  PhoneVerificationModal,
   type DonationTab,
   type FoodNotification,
 } from "@/components/food/panels";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
 
-const NEARBY: NearbyFood[] = [
+const INITIAL_NEARBY: NearbyFood[] = [
   {
     id: "oranges",
-    title: "10 oranges",
+    title: "10 fresh sweet oranges",
     distance: "0.5 miles",
     area: "Granja Viana",
     host: "Karina Somers",
+    hostPhone: "+55 11 98877-6655",
+    hostVerified: true,
     image: "/food/oranges.png",
-    badge: "Needs scheduling",
+    badge: "Available now",
+    timeLeft: "45m left",
+    minutesLeft: 45,
+    foodAge: "Harvested today",
+    preparedDaysAgo: 0,
+    keptRefrigerated: true,
+    allergens: [],
+    address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
+    pickupType: "immediate",
+    status: "available",
   },
   {
     id: "bananas",
-    title: "02 bananas",
+    title: "02 organic bananas",
     distance: "0.5 miles",
     area: "Granja Viana",
     host: "Karina Somers",
+    hostPhone: "+55 11 98877-6655",
+    hostVerified: true,
     image: "/food/bananas.png",
+    badge: "Needs scheduling",
+    timeLeft: "1h 15m left",
+    minutesLeft: 75,
+    foodAge: "Fresh (ripe)",
+    preparedDaysAgo: 1,
+    keptRefrigerated: true,
+    allergens: [],
+    address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
+    pickupType: "scheduled",
+    slots: [
+      { id: "slot-1", label: "Today 4:00 PM – 4:30 PM" },
+      { id: "slot-2", label: "Today 4:30 PM – 5:00 PM" },
+      { id: "slot-3", label: "Today 5:00 PM – 5:30 PM" },
+    ],
+    status: "available",
+  },
+  {
+    id: "strogonoff-nearby",
+    title: "Brazilian vegan strogonoff (2 portions)",
+    distance: "0.8 miles",
+    area: "Granja Viana",
+    host: "Carlos Mendes",
+    hostPhone: "+55 11 97766-5544",
+    hostVerified: true,
+    image: "/food/stroganoff.png",
     badge: "Available now",
+    timeLeft: "30m left",
+    minutesLeft: 30,
+    foodAge: "Cooked today (2h ago)",
+    preparedDaysAgo: 0,
+    keptRefrigerated: true,
+    allergens: ["Soy", "Mushrooms"],
+    address: "Av. São Camilo, 980 - Granja Viana",
+    pickupType: "immediate",
+    status: "available",
+  },
+  {
+    id: "bread-expired",
+    title: "Organic artisan sourdough loaf",
+    distance: "1.2 miles",
+    area: "Granja Viana",
+    host: "Lucia Rocha",
+    hostPhone: "+55 11 96655-4433",
+    hostVerified: true,
+    image: "/food/eggs.png",
+    badge: "Expired",
+    timeLeft: "Expired",
+    minutesLeft: 0,
+    foodAge: "Baked 2 days ago",
+    preparedDaysAgo: 2,
+    keptRefrigerated: false,
+    allergens: ["Gluten"],
+    address: "Rua Monet, 55 - Granja Viana",
+    pickupType: "immediate",
+    status: "expired",
   },
 ];
 
 const INITIAL_DONATIONS: Donation[] = [
-  { id: "eggs", title: "5 eggs", image: "/food/eggs.png", status: "open", interested: 5 },
-  { id: "strogonoff", title: "Brazilian vegan strogonoff", image: "/food/stroganoff.png", status: "open", interested: 0 },
-  { id: "herbs", title: "Garden herbs", image: "/food/bananas.png", status: "closed", interested: 2 },
+  {
+    id: "eggs",
+    title: "5 fresh eggs",
+    image: "/food/eggs.png",
+    status: "open",
+    interested: 5,
+    claimStatus: "claimed",
+    claimedBy: "Dev",
+    claimedSlot: "Today 4:00 PM",
+    claimerPhone: "+55 11 98765-4321",
+    timeLeft: "35m left",
+    foodAge: "Fresh today",
+    allergens: ["Eggs"],
+  },
+  {
+    id: "strogonoff",
+    title: "Brazilian vegan strogonoff",
+    image: "/food/stroganoff.png",
+    status: "open",
+    interested: 0,
+    claimStatus: "unclaimed",
+    timeLeft: "50m left",
+    foodAge: "Cooked today",
+    allergens: ["Soy"],
+  },
+  {
+    id: "herbs",
+    title: "Garden herbs assortment",
+    image: "/food/bananas.png",
+    status: "closed",
+    interested: 2,
+    claimStatus: "picked_up",
+    pickedUpAt: "Rescued in 38m",
+    foodAge: "Harvested yesterday",
+    allergens: [],
+  },
 ];
 
 const INITIAL_NOTIFICATIONS: FoodNotification[] = [
   {
     id: "notif-1",
-    title: "Pickup request: 10 oranges",
-    message: "Karina Somers requested to pick up 10 oranges. Suggested pickup window is today at 4:00 PM.",
+    title: "Pickup request: 5 fresh eggs",
+    message: "Dev claimed your 5 fresh eggs for the 4:00 PM slot. Address has been released for pickup.",
     time: "10m ago",
     read: false,
     type: "pickup",
-    category: "food_nearby",
-    actionLabel: "Confirm pickup time",
+    category: "donation",
+    actionLabel: "Manage pickup",
   },
   {
     id: "notif-2",
     title: "5 interested neighbors",
-    message: "Your donation 5 eggs has 5 neighbors interested in picking up. Coordinate scheduling before it expires.",
+    message: "Your donation 5 eggs has 5 neighbors interested. Coordinate scheduling before it expires.",
     time: "1h ago",
     read: false,
     type: "interest",
     category: "donation",
-    actionLabel: "Manage donation",
+    actionLabel: "View donation",
   },
   {
     id: "notif-3",
@@ -95,12 +197,24 @@ export default function FoodPage() {
   const [notifFilter, setNotifFilter] = useState<"all" | "unread">("all");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [donations, setDonations] = useState(INITIAL_DONATIONS);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+
+  // Core Data States
+  const [nearbyList, setNearbyList] = useState<NearbyFood[]>(INITIAL_NEARBY);
+  const [donations, setDonations] = useState<Donation[]>(INITIAL_DONATIONS);
+  const [notifications, setNotifications] = useState<FoodNotification[]>(INITIAL_NOTIFICATIONS);
+
+  // Active Flow Overlays & Modals
   const [nearbyItem, setNearbyItem] = useState<NearbyFood | null>(null);
   const [donationItem, setDonationItem] = useState<Donation | null>(null);
   const [selectedNotif, setSelectedNotif] = useState<FoodNotification | null>(null);
   const [composing, setComposing] = useState(false);
+  const [claimHandoff, setClaimHandoff] = useState<{ food: NearbyFood; slot: string } | null>(null);
+
+  // Phone Verification State (BRD Requirement)
+  const [isUserVerified, setIsUserVerified] = useState(true);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [pendingVerificationAction, setPendingVerificationAction] = useState<(() => void) | null>(null);
+
   const [notice, setNotice] = useState<string | null>(null);
 
   const unreadCount = useMemo(
@@ -108,10 +222,11 @@ export default function FoodPage() {
     [notifications],
   );
 
-  const nearbyVisible = useMemo(
-    () => (query.trim() ? NEARBY.filter((item) => matches(item.title, query)) : NEARBY),
-    [query],
-  );
+  const nearbyVisible = useMemo(() => {
+    return query.trim()
+      ? nearbyList.filter((item) => matches(item.title + " " + item.area + " " + item.host, query))
+      : nearbyList;
+  }, [nearbyList, query]);
 
   const donationVisible = useMemo(() => {
     return donations.filter((item) => {
@@ -137,6 +252,7 @@ export default function FoodPage() {
     setNearbyItem(null);
     setDonationItem(null);
     setSelectedNotif(null);
+    setClaimHandoff(null);
     setComposing(false);
     setNotice(null);
   }
@@ -157,20 +273,193 @@ export default function FoodPage() {
     setNotice("All notifications marked as read.");
   }
 
+  // Verification helper
+  function triggerPhoneVerification(onSuccess: () => void) {
+    setPendingVerificationAction(() => onSuccess);
+    setShowPhoneModal(true);
+  }
+
+  function onPhoneVerified() {
+    setIsUserVerified(true);
+    setShowPhoneModal(false);
+    setNotice("✓ Phone verified successfully! Basic accountability enabled.");
+    if (pendingVerificationAction) {
+      pendingVerificationAction();
+      setPendingVerificationAction(null);
+    }
+  }
+
+  // Claim Flow Handler (Browse -> Risk Acknowledgment -> Claim Handoff)
+  function handleClaimFood(food: NearbyFood, slot: string) {
+    // 1. Mark item as claimed in nearby list
+    setNearbyList((prev) =>
+      prev.map((item) =>
+        item.id === food.id
+          ? { ...item, status: "claimed", badge: "Claimed", claimedBy: "You", claimedSlot: slot }
+          : item,
+      ),
+    );
+
+    // 2. Close detail sheet and open Handoff Screen
+    setNearbyItem(null);
+    setClaimHandoff({ food, slot });
+
+    // 3. Generate push notifications for donor and claimer (BRD requirement)
+    setNotifications((prev) => [
+      {
+        id: `notif-claim-${Date.now()}`,
+        title: `Claim confirmed: ${food.title}`,
+        message: `Pickup confirmed for ${slot} at ${food.address}. Coordinate on WhatsApp.`,
+        time: "Just now",
+        read: false,
+        type: "pickup",
+        category: "food_nearby",
+      },
+      ...prev,
+    ]);
+
+    setNotice(`🎉 You claimed ${food.title}! Address and WhatsApp coordination unlocked.`);
+  }
+
+  // Pickup Confirmation (Claimer or Donor records "Picked up")
+  function handleMarkPickedUp(foodId: string, title: string) {
+    // Update nearby list
+    setNearbyList((prev) =>
+      prev.map((item) =>
+        item.id === foodId ? { ...item, status: "picked_up", badge: "Picked up" } : item,
+      ),
+    );
+
+    // Update donations list if it belongs to donor
+    setDonations((prev) =>
+      prev.map((item) =>
+        item.id === foodId || item.title.includes(title)
+          ? { ...item, status: "closed", claimStatus: "picked_up", pickedUpAt: "Rescued in 42m" }
+          : item,
+      ),
+    );
+
+    setClaimHandoff(null);
+    setDonationItem(null);
+
+    // Add milestone notification
+    setNotifications((prev) => [
+      {
+        id: `notif-pickup-${Date.now()}`,
+        title: "Food rescue complete!",
+        message: `${title} was successfully picked up and rescued within the 60m neighborhood target.`,
+        time: "Just now",
+        read: false,
+        type: "system",
+        category: "food_nearby",
+      },
+      ...prev,
+    ]);
+
+    setNotice(`✓ "${title}" marked as picked up! Food waste prevented 🎉`);
+  }
+
+  // Cancel / Release Claim (Edge state)
+  function handleCancelClaim(foodId: string, title: string) {
+    setNearbyList((prev) =>
+      prev.map((item) =>
+        item.id === foodId ? { ...item, status: "available", badge: "Available now", claimedBy: undefined } : item,
+      ),
+    );
+    setClaimHandoff(null);
+    setNotice(`Claim cancelled for ${title}. Item released back to nearby neighbors.`);
+  }
+
+  // Create Listing Handler (Supply side)
+  function handlePublishDonation(data: {
+    title: string;
+    foodAge: string;
+    preparedDaysAgo: number;
+    keptRefrigerated: boolean;
+    allergens: string[];
+    pickupType: "immediate" | "scheduled";
+    slotLabel: string;
+  }) {
+    const newId = `donation-${Date.now()}`;
+    const newDonation: Donation = {
+      id: newId,
+      title: data.title,
+      image: "/food/eggs.png",
+      status: "open",
+      interested: 0,
+      claimStatus: "unclaimed",
+      timeLeft: data.pickupType === "immediate" ? "60m left" : "Today 6:00 PM",
+      foodAge: data.foodAge,
+      allergens: data.allergens,
+    };
+
+    const newNearby: NearbyFood = {
+      id: newId,
+      title: data.title,
+      distance: "0.1 miles",
+      area: "Granja Viana",
+      host: "Karina Somers",
+      hostPhone: "+55 11 98877-6655",
+      hostVerified: true,
+      image: "/food/eggs.png",
+      badge: data.pickupType === "immediate" ? "Available now" : "Needs scheduling",
+      timeLeft: data.pickupType === "immediate" ? "60m left" : "Available today",
+      minutesLeft: 60,
+      foodAge: data.foodAge,
+      preparedDaysAgo: data.preparedDaysAgo,
+      keptRefrigerated: data.keptRefrigerated,
+      allergens: data.allergens,
+      address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
+      pickupType: data.pickupType,
+      slots: data.pickupType === "scheduled" ? [{ id: "slot-new", label: data.slotLabel }] : undefined,
+      status: "available",
+    };
+
+    setDonations((prev) => [newDonation, ...prev]);
+    setNearbyList((prev) => [newNearby, ...prev]);
+
+    setNotifications((prev) => [
+      {
+        id: `notif-new-${Date.now()}`,
+        title: "New donation live",
+        message: `Your listing for "${data.title}" is now visible to nearby neighbors for pickup.`,
+        time: "Just now",
+        read: false,
+        type: "system",
+        category: "donation",
+      },
+      ...prev,
+    ]);
+
+    setComposing(false);
+    setTab("open");
+    setNotice(`"${data.title}" is now live for neighbor pickup!`);
+  }
+
   const donationCountLabel =
     tab === "closed" ? "closed donations" : tab === "all" ? "donations" : "open donations";
   const donationCount = String(
     donations.filter((item) => (tab === "all" ? true : item.status === tab)).length,
   ).padStart(2, "0");
 
-  const overlay = nearbyItem ? (
+  // Dynamic Modals & Sheets Overlay
+  const overlay = claimHandoff ? (
+    <ClaimHandoffSheet
+      food={claimHandoff.food}
+      selectedSlot={claimHandoff.slot}
+      onClose={() => setClaimHandoff(null)}
+      onMarkPickedUp={() => handleMarkPickedUp(claimHandoff.food.id, claimHandoff.food.title)}
+      onCancelClaim={() => handleCancelClaim(claimHandoff.food.id, claimHandoff.food.title)}
+    />
+  ) : nearbyItem ? (
     <NearbyDetail
       item={nearbyItem}
+      isUserVerified={isUserVerified}
       onClose={() => setNearbyItem(null)}
-      onReserve={() => {
-        setNotice(`Reserved ${nearbyItem.title}. Karina will confirm the pickup.`);
-        setNearbyItem(null);
-      }}
+      onClaim={(slot) => handleClaimFood(nearbyItem, slot)}
+      onNeedsVerification={() =>
+        triggerPhoneVerification(() => handleClaimFood(nearbyItem, "Immediate (Next 60 min)"))
+      }
     />
   ) : donationItem ? (
     <DonationDetail
@@ -192,6 +481,19 @@ export default function FoodPage() {
         if (nextStatus === "closed") setTab("closed");
         if (nextStatus === "open") setTab("open");
       }}
+      onMarkPickedUp={() => handleMarkPickedUp(donationItem.id, donationItem.title)}
+    />
+  ) : composing ? (
+    <NewDonationSheet
+      onClose={() => setComposing(false)}
+      isUserVerified={isUserVerified}
+      onPublish={handlePublishDonation}
+      onNeedsVerification={() => triggerPhoneVerification(() => {})}
+    />
+  ) : showPhoneModal ? (
+    <PhoneVerificationModal
+      onClose={() => setShowPhoneModal(false)}
+      onVerified={onPhoneVerified}
     />
   ) : selectedNotif ? (
     <NotificationDetail
@@ -199,36 +501,12 @@ export default function FoodPage() {
       onClose={() => setSelectedNotif(null)}
       onAction={() => {
         markNotificationRead(selectedNotif.id);
-        if (selectedNotif.type === "interest") {
+        if (selectedNotif.category === "donation") {
           switchScreen("donations");
           setTab("open");
-        } else if (selectedNotif.type === "pickup") {
-          setNotice(`Pickup confirmed for ${selectedNotif.title.replace("Pickup request: ", "")}.`);
+        } else {
+          switchScreen("nearby");
         }
-      }}
-    />
-  ) : composing ? (
-    <NewDonationSheet
-      onClose={() => setComposing(false)}
-      onPublish={(title) => {
-        setDonations((current) => [
-          { id: `new-${Date.now()}`, title, image: "/food/eggs.png", status: "open", interested: 0 },
-          ...current,
-        ]);
-        setNotifications((current) => [
-          {
-            id: `notif-${Date.now()}`,
-            title: "New donation published",
-            message: `Your listing for "${title}" is now active and discoverable.`,
-            time: "Just now",
-            read: false,
-            type: "system",
-          },
-          ...current,
-        ]);
-        setComposing(false);
-        setTab("open");
-        setNotice(`${title} is now an open donation.`);
       }}
     />
   ) : null;
@@ -264,6 +542,7 @@ export default function FoodPage() {
           onToggleSearch={toggleSearch}
           onQuery={setQuery}
           onOpen={setDonationItem}
+          onCreate={() => setComposing(true)}
         />
       ) : (
         <NotificationsView
@@ -279,7 +558,6 @@ export default function FoodPage() {
           onQuery={setQuery}
           onOpen={(item) => {
             markNotificationRead(item.id);
-            // Open sheet without resetting filter if in unread mode
             setSelectedNotif(item);
           }}
         />
@@ -305,29 +583,38 @@ function NearbyView({
   onQuery: (value: string) => void;
   onOpen: (item: NearbyFood) => void;
 }) {
-  const heading = query.trim() ? `${String(items.length).padStart(2, "0")} matches` : "10 options nearby";
-
   return (
     <>
-      <header style={{ position: "relative", display: "flex", flexDirection: "column", gap: 24, padding: 24 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%" }}>
-          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600, lineHeight: 1 }}>Hi, Kari</h1>
-          <p style={{ margin: 0, fontSize: "var(--font-size-body-base)", color: "var(--color-text-secondary)", lineHeight: 1 }}>
-            Enjoy fresh food before it goes to the bin.
-          </p>
+      <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>Hi, Kari</h1>
+          <KariAvatar aria-label="Kari profile" style={{ width: 36, height: 36 }} />
         </div>
-        <KariAvatar aria-label="Kari profile" style={{ position: "absolute", top: 8, right: 24 }} />
+        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
+          Enjoy fresh food before it goes to the bin.
+        </p>
       </header>
-      <section style={{ display: "flex", flexDirection: "column", gap: 24, paddingInline: 24 }}>
+
+      <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>{heading}</h2>
+            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              {query.trim()
+                ? `${String(items.length).padStart(2, "0")} matches`
+                : `${String(items.length).padStart(2, "0")} options nearby`}
+            </h2>
             <SearchField open={searchOpen} onToggle={onToggleSearch} />
           </div>
           <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
         </div>
+
         {notice ? <Notice>{notice}</Notice> : null}
-        {items.length === 0 ? <Empty>No food matches that search.</Empty> : items.map((item) => <NearbyCard key={item.id} item={item} onOpen={onOpen} />)}
+
+        {items.length === 0 ? (
+          <Empty>No food nearby matches your search.</Empty>
+        ) : (
+          items.map((item) => <NearbyCard key={item.id} item={item} onOpen={onOpen} />)
+        )}
       </section>
     </>
   );
@@ -344,6 +631,7 @@ function DonationsView({
   onToggleSearch,
   onQuery,
   onOpen,
+  onCreate,
 }: {
   items: Donation[];
   countLabel: string;
@@ -355,26 +643,59 @@ function DonationsView({
   onToggleSearch: () => void;
   onQuery: (value: string) => void;
   onOpen: (item: Donation) => void;
+  onCreate?: () => void;
 }) {
   return (
     <>
-      <header style={{ display: "flex", flexDirection: "column", gap: 16, padding: 24 }}>
-        <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600, lineHeight: 1 }}>My donations</h1>
-        <p style={{ margin: 0, fontSize: "var(--font-size-body-base)", color: "var(--color-text-secondary)", lineHeight: 1 }}>
-          Turn extra food into instant impact.
+      <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>My donations</h1>
+          <KariAvatar aria-label="Kari profile" style={{ width: 36, height: 36 }} />
+        </div>
+        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
+          Manage your shared food and coordinate neighbor pickups.
         </p>
-        <DonationTabs value={tab} onChange={onTab} />
       </header>
-      <section style={{ display: "flex", flexDirection: "column", gap: 24, paddingInline: 24 }}>
+
+      <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
+        <DonationTabs value={tab} onChange={onTab} />
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>{query.trim() ? `${String(items.length).padStart(2, "0")} matches` : countLabel}</h2>
+            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              {query.trim() ? `${String(items.length).padStart(2, "0")} matches` : countLabel}
+            </h2>
             <SearchField open={searchOpen} onToggle={onToggleSearch} />
           </div>
           <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
         </div>
+
         {notice ? <Notice>{notice}</Notice> : null}
-        {items.length === 0 ? <Empty>Nothing in this list yet.</Empty> : items.map((item) => <ListingCard key={item.id} item={item} onOpen={onOpen} />)}
+
+        {items.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", paddingBlock: 24 }}>
+            <Empty>No {tab} donations yet.</Empty>
+            {onCreate ? (
+              <button
+                type="button"
+                onClick={onCreate}
+                style={{
+                  border: "none",
+                  background: "var(--color-action-primary, #dc2b10)",
+                  color: "#fff",
+                  padding: "8px 16px",
+                  borderRadius: "9999px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                + Share surplus food
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          items.map((item) => <ListingCard key={item.id} item={item} onOpen={onOpen} />)
+        )}
       </section>
     </>
   );
@@ -399,7 +720,7 @@ function NotificationsView({
   query: string;
   searchOpen: boolean;
   notice: string | null;
-  onFilter: (f: "all" | "unread") => void;
+  onFilter: (filter: "all" | "unread") => void;
   onMarkAllRead: () => void;
   onToggleSearch: () => void;
   onQuery: (value: string) => void;
@@ -407,24 +728,20 @@ function NotificationsView({
 }) {
   return (
     <>
-      <header style={{ display: "flex", flexDirection: "column", gap: 16, padding: 24 }}>
+      <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600, lineHeight: 1 }}>Notifications</h1>
-            <p style={{ margin: "8px 0 0 0", fontSize: "var(--font-size-body-base)", color: "var(--color-text-secondary)", lineHeight: 1 }}>
-              Stay updated on reservations and pickups.
-            </p>
-          </div>
+          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>Notifications</h1>
+          <KariAvatar aria-label="Kari profile" style={{ width: 36, height: 36 }} />
         </div>
+        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
+          Stay updated on reservations and pickups.
+        </p>
 
         {/* Filter and Mark Read actions */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
           <div role="tablist" aria-label="Notification filter" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span role="tab" aria-selected={filter === "all"} onClick={() => onFilter("all")}>
-              <Chip
-                label="All"
-                selected={filter === "all" ? "True" : "False"}
-              />
+              <Chip label="All" selected={filter === "all" ? "True" : "False"} />
             </span>
             <span role="tab" aria-selected={filter === "unread"} onClick={() => onFilter("unread")}>
               <Chip
@@ -441,8 +758,8 @@ function NotificationsView({
               style={{
                 border: "none",
                 background: "transparent",
-                color: "var(--color-text-brand, #be240c)",
-                fontSize: "var(--font-size-body-xs)",
+                color: "var(--color-action-primary, #dc2b10)",
+                fontSize: "var(--font-size-body-sm)",
                 fontWeight: 600,
                 cursor: "pointer",
                 padding: "4px 8px",
@@ -511,8 +828,12 @@ function NotificationsView({
                         width: 32,
                         height: 32,
                         borderRadius: "9999px",
-                        background: item.read ? "var(--color-background-muted, #f2f2f6)" : "var(--color-background-brand-subtle, #ffedec)",
-                        color: item.read ? "var(--color-text-secondary, #5c5c63)" : "var(--color-action-primary, #dc2b10)",
+                        background: item.read
+                          ? "var(--color-background-muted, #f2f2f6)"
+                          : "var(--color-background-brand-subtle, #ffedec)",
+                        color: item.read
+                          ? "var(--color-text-secondary, #5c5c63)"
+                          : "var(--color-action-primary, #dc2b10)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -627,6 +948,6 @@ function Notice({ children }: { children: string }) {
   );
 }
 
-function Empty({ children }: { children: string }) {
-  return <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>{children}</p>;
+function Empty({ children }: { children: ReactNode }) {
+  return <div style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>{children}</div>;
 }
