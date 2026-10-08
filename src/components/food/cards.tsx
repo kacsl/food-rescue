@@ -28,9 +28,20 @@ export type NearbyFood = {
 
 export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: NearbyFood) => void }) {
   return (
-    <button type="button" onClick={() => onOpen(item)} aria-label={`View ${item.title}`} style={{ ...cardChrome, display: "flex", flexDirection: "column" }}>
-      <span style={{ position: "relative", display: "block", aspectRatio: "1500 / 1000" }}>
-        <img src={item.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+    <button
+      type="button"
+      onClick={() => onOpen(item)}
+      aria-label={`View ${item.title}`}
+      className="food-card-interactive"
+      style={{ ...cardChrome, display: "flex", flexDirection: "column" }}
+    >
+      <span style={{ position: "relative", display: "block", aspectRatio: "1500 / 1000", overflow: "hidden" }}>
+        <img
+          src={item.image}
+          alt=""
+          className="food-card-img"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
         <span
           style={{
             position: "absolute",
@@ -53,7 +64,7 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
             <span style={{ fontSize: "var(--font-size-body-sm)", color: "var(--color-text-secondary)" }}>{item.host}</span>
           </span>
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, flexShrink: 0 }}>
+        <span className="food-card-chevron" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, flexShrink: 0 }}>
           <img src="/food/chevron.svg" width={16} height={16} alt="" />
         </span>
       </span>
@@ -80,10 +91,16 @@ export function ListingCard({ item, onOpen }: { item: Donation; onOpen: (item: D
       type="button"
       onClick={() => onOpen(item)}
       aria-label={`View ${item.title}`}
+      className="food-card-interactive"
       style={{ ...cardChrome, display: "flex", alignItems: "center", gap: 12, height: 79, background: "#fff" }}
     >
-      <span style={{ position: "relative", width: 80, height: "100%", flexShrink: 0, borderRight: "1px solid var(--color-border-subtle)" }}>
-        <img src={item.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+      <span style={{ position: "relative", width: 80, height: "100%", flexShrink: 0, overflow: "hidden", borderRight: "1px solid var(--color-border-subtle)" }}>
+        <img
+          src={item.image}
+          alt=""
+          className="food-card-img"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
         <span
           style={{
             position: "absolute",
@@ -115,7 +132,7 @@ export function ListingCard({ item, onOpen }: { item: Donation; onOpen: (item: D
           <span style={{ fontSize: "var(--font-size-body-sm)", color: "var(--color-text-secondary)" }}>{people}</span>
         </span>
       </span>
-      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, marginRight: 4, flexShrink: 0 }}>
+      <span className="food-card-chevron" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, marginRight: 4, flexShrink: 0 }}>
         <img src="/food/chevron.svg" width={16} height={16} alt="" />
       </span>
     </button>

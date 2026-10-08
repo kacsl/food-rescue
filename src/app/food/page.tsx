@@ -4,7 +4,17 @@ import { useMemo, useState } from "react";
 import { KariAvatar } from "@/components/ds/avatar";
 import { ListingCard, NearbyCard, type Donation, type NearbyFood } from "@/components/food/cards";
 import { PhoneFrame, type FoodScreen } from "@/components/food/phone-frame";
-import { DonationDetail, DonationTabs, NearbyDetail, NewDonationSheet, SearchField, type DonationTab } from "@/components/food/panels";
+import {
+  DonationDetail,
+  DonationTabs,
+  NearbyDetail,
+  NewDonationSheet,
+  NotificationDetail,
+  SearchField,
+  type DonationTab,
+  type FoodNotification,
+} from "@/components/food/panels";
+import { BellIcon } from "@heroicons/react/24/outline";
 
 const NEARBY: NearbyFood[] = [
   {
@@ -33,6 +43,43 @@ const INITIAL_DONATIONS: Donation[] = [
   { id: "herbs", title: "Garden herbs", image: "/food/bananas.png", status: "closed", interested: 2 },
 ];
 
+const INITIAL_NOTIFICATIONS: FoodNotification[] = [
+  {
+    id: "notif-1",
+    title: "Pickup request: 10 oranges",
+    message: "Karina Somers requested to pick up 10 oranges. Suggested pickup window is today at 4:00 PM.",
+    time: "10m ago",
+    read: false,
+    type: "pickup",
+    actionLabel: "Confirm pickup time",
+  },
+  {
+    id: "notif-2",
+    title: "5 interested neighbors",
+    message: "Your donation 5 eggs has 5 neighbors interested in picking up. Coordinate scheduling before it expires.",
+    time: "1h ago",
+    read: false,
+    type: "interest",
+    actionLabel: "Manage donation",
+  },
+  {
+    id: "notif-3",
+    title: "Food rescue reminder",
+    message: "Granja Viana community drop-off station is open until 7:00 PM today.",
+    time: "3h ago",
+    read: true,
+    type: "reminder",
+  },
+  {
+    id: "notif-4",
+    title: "Listing published",
+    message: "Brazilian vegan strogonoff was successfully listed and is visible to nearby food seekers.",
+    time: "Yesterday",
+    read: true,
+    type: "system",
+  },
+];
+
 function matches(title: string, query: string) {
   return title.toLowerCase().includes(query.trim().toLowerCase());
 }
@@ -40,13 +87,21 @@ function matches(title: string, query: string) {
 export default function FoodPage() {
   const [screen, setScreen] = useState<FoodScreen>("nearby");
   const [tab, setTab] = useState<DonationTab>("open");
+  const [notifFilter, setNotifFilter] = useState<"all" | "unread">("all");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [donations, setDonations] = useState(INITIAL_DONATIONS);
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [nearbyItem, setNearbyItem] = useState<NearbyFood | null>(null);
   const [donationItem, setDonationItem] = useState<Donation | null>(null);
+  const [selectedNotif, setSelectedNotif] = useState<FoodNotification | null>(null);
   const [composing, setComposing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications],
+  );
 
   const nearbyVisible = useMemo(
     () => (query.trim() ? NEARBY.filter((item) => matches(item.title, query)) : NEARBY),
@@ -62,12 +117,21 @@ export default function FoodPage() {
     });
   }, [donations, query, tab]);
 
+  const notificationsVisible = useMemo(() => {
+    return notifications.filter((item) => {
+      if (notifFilter === "unread" && item.read) return false;
+      if (query.trim() && !matches(item.title + " " + item.message, query)) return false;
+      return true;
+    });
+  }, [notifications, notifFilter, query]);
+
   function switchScreen(next: FoodScreen) {
     setScreen(next);
     setQuery("");
     setSearchOpen(false);
     setNearbyItem(null);
     setDonationItem(null);
+    setSelectedNotif(null);
     setComposing(false);
     setNotice(null);
   }
@@ -75,6 +139,17 @@ export default function FoodPage() {
   function toggleSearch() {
     setSearchOpen((open) => !open);
     setQuery("");
+  }
+
+  function markNotificationRead(id: string) {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    );
+  }
+
+  function markAllNotificationsRead() {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotice("All notifications marked as read.");
   }
 
   const donationCountLabel =
@@ -98,11 +173,33 @@ export default function FoodPage() {
       onClose={() => setDonationItem(null)}
       onToggleStatus={() => {
         const nextStatus = donationItem.status === "open" ? "closed" : "open";
-        setDonations((current) => current.map((item) => (item.id === donationItem.id ? { ...item, status: nextStatus } : item)));
-        setNotice(nextStatus === "closed" ? `${donationItem.title} marked as picked up.` : `${donationItem.title} is open again.`);
+        setDonations((current) =>
+          current.map((item) =>
+            item.id === donationItem.id ? { ...item, status: nextStatus } : item,
+          ),
+        );
+        setNotice(
+          nextStatus === "closed"
+            ? `${donationItem.title} marked as picked up.`
+            : `${donationItem.title} is open again.`,
+        );
         setDonationItem(null);
         if (nextStatus === "closed") setTab("closed");
         if (nextStatus === "open") setTab("open");
+      }}
+    />
+  ) : selectedNotif ? (
+    <NotificationDetail
+      item={selectedNotif}
+      onClose={() => setSelectedNotif(null)}
+      onAction={() => {
+        markNotificationRead(selectedNotif.id);
+        if (selectedNotif.type === "interest") {
+          switchScreen("donations");
+          setTab("open");
+        } else if (selectedNotif.type === "pickup") {
+          setNotice(`Pickup confirmed for ${selectedNotif.title.replace("Pickup request: ", "")}.`);
+        }
       }}
     />
   ) : composing ? (
@@ -113,6 +210,17 @@ export default function FoodPage() {
           { id: `new-${Date.now()}`, title, image: "/food/eggs.png", status: "open", interested: 0 },
           ...current,
         ]);
+        setNotifications((current) => [
+          {
+            id: `notif-${Date.now()}`,
+            title: "New donation published",
+            message: `Your listing for "${title}" is now active and discoverable.`,
+            time: "Just now",
+            read: false,
+            type: "system",
+          },
+          ...current,
+        ]);
         setComposing(false);
         setTab("open");
         setNotice(`${title} is now an open donation.`);
@@ -121,7 +229,14 @@ export default function FoodPage() {
   ) : null;
 
   return (
-    <PhoneFrame screen={screen} onScreen={switchScreen} showCreate={screen === "donations"} onCreate={() => setComposing(true)} overlay={overlay}>
+    <PhoneFrame
+      screen={screen}
+      onScreen={switchScreen}
+      notificationCount={unreadCount}
+      showCreate={screen === "donations"}
+      onCreate={() => setComposing(true)}
+      overlay={overlay}
+    >
       {screen === "nearby" ? (
         <NearbyView
           items={nearbyVisible}
@@ -132,7 +247,7 @@ export default function FoodPage() {
           onQuery={setQuery}
           onOpen={setNearbyItem}
         />
-      ) : (
+      ) : screen === "donations" ? (
         <DonationsView
           items={donationVisible}
           countLabel={`${donationCount} ${donationCountLabel}`}
@@ -144,6 +259,23 @@ export default function FoodPage() {
           onToggleSearch={toggleSearch}
           onQuery={setQuery}
           onOpen={setDonationItem}
+        />
+      ) : (
+        <NotificationsView
+          items={notificationsVisible}
+          filter={notifFilter}
+          unreadCount={unreadCount}
+          query={query}
+          searchOpen={searchOpen}
+          notice={notice}
+          onFilter={setNotifFilter}
+          onMarkAllRead={markAllNotificationsRead}
+          onToggleSearch={toggleSearch}
+          onQuery={setQuery}
+          onOpen={(item) => {
+            markNotificationRead(item.id);
+            setSelectedNotif(item);
+          }}
         />
       )}
     </PhoneFrame>
@@ -242,6 +374,238 @@ function DonationsView({
   );
 }
 
+function NotificationsView({
+  items,
+  filter,
+  unreadCount,
+  query,
+  searchOpen,
+  notice,
+  onFilter,
+  onMarkAllRead,
+  onToggleSearch,
+  onQuery,
+  onOpen,
+}: {
+  items: FoodNotification[];
+  filter: "all" | "unread";
+  unreadCount: number;
+  query: string;
+  searchOpen: boolean;
+  notice: string | null;
+  onFilter: (f: "all" | "unread") => void;
+  onMarkAllRead: () => void;
+  onToggleSearch: () => void;
+  onQuery: (value: string) => void;
+  onOpen: (item: FoodNotification) => void;
+}) {
+  return (
+    <>
+      <header style={{ display: "flex", flexDirection: "column", gap: 16, padding: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600, lineHeight: 1 }}>Notifications</h1>
+            <p style={{ margin: "8px 0 0 0", fontSize: "var(--font-size-body-base)", color: "var(--color-text-secondary)", lineHeight: 1 }}>
+              Stay updated on reservations and pickups.
+            </p>
+          </div>
+        </div>
+
+        {/* Filter and Mark Read actions */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+          <div role="tablist" aria-label="Notification filter" style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filter === "all"}
+              onClick={() => onFilter("all")}
+              style={{
+                border: "none",
+                background: filter === "all" ? "var(--color-action-primary, #dc2b10)" : "var(--color-background-muted, #f2f2f6)",
+                color: filter === "all" ? "#ffffff" : "var(--color-text-secondary, #5c5c63)",
+                padding: "6px 14px",
+                borderRadius: "9999px",
+                fontSize: "var(--font-size-body-sm)",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "background 0.18s ease, color 0.18s ease, transform 0.18s ease",
+              }}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filter === "unread"}
+              onClick={() => onFilter("unread")}
+              style={{
+                border: "none",
+                background: filter === "unread" ? "var(--color-action-primary, #dc2b10)" : "var(--color-background-muted, #f2f2f6)",
+                color: filter === "unread" ? "#ffffff" : "var(--color-text-secondary, #5c5c63)",
+                padding: "6px 14px",
+                borderRadius: "9999px",
+                fontSize: "var(--font-size-body-sm)",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                transition: "background 0.18s ease, color 0.18s ease, transform 0.18s ease",
+              }}
+            >
+              Unread
+              {unreadCount > 0 ? (
+                <span
+                  style={{
+                    background: filter === "unread" ? "#ffffff" : "var(--color-action-primary, #dc2b10)",
+                    color: filter === "unread" ? "var(--color-action-primary, #dc2b10)" : "#ffffff",
+                    borderRadius: "9999px",
+                    paddingInline: 5,
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    lineHeight: "14px",
+                  }}
+                >
+                  {unreadCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+
+          {unreadCount > 0 ? (
+            <button
+              type="button"
+              onClick={onMarkAllRead}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "var(--color-text-brand, #be240c)",
+                fontSize: "var(--font-size-body-xs)",
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: "4px 8px",
+                textDecoration: "underline",
+              }}
+            >
+              Mark all read
+            </button>
+          ) : null}
+        </div>
+      </header>
+
+      <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              {query.trim()
+                ? `${String(items.length).padStart(2, "0")} matches`
+                : filter === "unread"
+                ? `${String(items.length).padStart(2, "0")} unread`
+                : `${String(items.length).padStart(2, "0")} updates`}
+            </h2>
+            <SearchField open={searchOpen} onToggle={onToggleSearch} />
+          </div>
+          <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
+        </div>
+
+        {notice ? <Notice>{notice}</Notice> : null}
+
+        {items.length === 0 ? (
+          <Empty>{filter === "unread" ? "You're all caught up! No unread notifications." : "No notifications found."}</Empty>
+        ) : (
+          items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onOpen(item)}
+              aria-label={`View notification: ${item.title}`}
+              className="food-card-interactive"
+              style={{
+                width: "100%",
+                padding: 16,
+                margin: 0,
+                textAlign: "left",
+                font: "inherit",
+                color: "inherit",
+                cursor: "pointer",
+                background: item.read ? "rgba(255, 255, 255, 0.45)" : "#ffffff",
+                border: item.read
+                  ? "1px solid var(--color-border-subtle, #e6e7ed)"
+                  : "1.5px solid var(--color-action-primary, #dc2b10)",
+                borderRadius: "var(--radius-card, 16px)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                backdropFilter: "blur(25px)",
+                WebkitBackdropFilter: "blur(25px)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "9999px",
+                      background: item.read ? "var(--color-background-muted, #f2f2f6)" : "var(--color-background-brand-subtle, #ffedec)",
+                      color: item.read ? "var(--color-text-secondary, #5c5c63)" : "var(--color-action-primary, #dc2b10)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <BellIcon width={16} height={16} aria-hidden="true" />
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "var(--font-size-body-base, 16px)",
+                      fontWeight: item.read ? 500 : 700,
+                      color: "var(--color-text-primary, #303036)",
+                    }}
+                  >
+                    {item.title}
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                  <span style={{ fontSize: "var(--font-size-body-xs, 12px)", color: "var(--color-text-tertiary, #75757d)" }}>
+                    {item.time}
+                  </span>
+                  {!item.read ? (
+                    <span
+                      className="food-unread-dot"
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "9999px",
+                        background: "var(--color-action-primary, #dc2b10)",
+                        display: "inline-block",
+                      }}
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "var(--font-size-body-sm, 14px)",
+                  color: "var(--color-text-secondary, #5c5c63)",
+                  lineHeight: 1.45,
+                  paddingLeft: 36,
+                }}
+              >
+                {item.message}
+              </p>
+            </button>
+          ))
+        )}
+      </section>
+    </>
+  );
+}
+
 function SearchSlot(props: { open: boolean; query: string; onToggle: () => void; onQuery: (value: string) => void }) {
   if (!props.open) return null;
   return (
@@ -252,8 +616,8 @@ function SearchSlot(props: { open: boolean; query: string; onToggle: () => void;
       onKeyDown={(event) => {
         if (event.key === "Escape") props.onToggle();
       }}
-      placeholder="Search food"
-      aria-label="Search food"
+      placeholder="Search..."
+      aria-label="Search"
       style={{
         width: "100%",
         height: 44,

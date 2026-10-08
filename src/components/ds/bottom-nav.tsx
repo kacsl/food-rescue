@@ -1,9 +1,12 @@
 import React from "react";
+import { BellIcon as BellOutline } from "@heroicons/react/24/outline";
+import { BellIcon as BellSolid } from "@heroicons/react/24/solid";
 
 export interface BottomNavItemProps {
   id: string;
   label: string;
-  icon: "store" | "bag" | React.ReactNode;
+  icon: "store" | "bag" | "bell" | React.ReactNode;
+  badge?: number | string;
   selected?: boolean;
   onClick?: () => void;
 }
@@ -11,6 +14,7 @@ export interface BottomNavItemProps {
 export interface BottomNavProps {
   items?: BottomNavItemProps[];
   activeId?: string;
+  notificationCount?: number;
   onSelect?: (id: string) => void;
   className?: string;
   style?: React.CSSProperties;
@@ -51,21 +55,44 @@ export function BagNavIcon({ selected = false }: { selected?: boolean }) {
   );
 }
 
+/** Bell Icon from Heroicons library for notifications */
+export function BellNavIcon({ selected = false }: { selected?: boolean }) {
+  if (selected) {
+    return (
+      <BellSolid
+        width={24}
+        height={24}
+        aria-hidden="true"
+        style={{
+          color: "var(--color-icon-primary, #303036)",
+          transition: "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
+          transform: "scale(1.04)",
+        }}
+      />
+    );
+  }
+  return (
+    <BellOutline
+      width={24}
+      height={24}
+      aria-hidden="true"
+      style={{
+        color: "var(--color-text-tertiary, #75757d)",
+        transition: "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
+      }}
+    />
+  );
+}
+
 /**
  * C49 - Bottom Navigation Component
  * Strictly synchronized with Figma Page 3035:7430 (C49 - Bottom navigation)
- *
- * Characteristics:
- * - Pill container: 222px × 68px (auto-adjusts to items), corner-radius 9999px
- * - Semi-transparent frosted glass: background blur 50px (25px-50px)
- * - Padding: 12px top/bottom, 24px left/right, item spacing 22px
- * - 1px subtle border: var(--color-border-subtle)
- * - Selected state: font-weight 600, color var(--color-text-primary)
- * - Not selected state: font-weight 400, color var(--color-text-tertiary)
+ * Extended with Heroicons notifications support and soft interactive micro-interactions.
  */
 export function BottomNav({
   items,
   activeId,
+  notificationCount,
   onSelect,
   className,
   style,
@@ -73,6 +100,7 @@ export function BottomNav({
   const defaultItems: BottomNavItemProps[] = [
     { id: "nearby", label: "Food Nearby", icon: "store" },
     { id: "donations", label: "My donations", icon: "bag" },
+    { id: "notifications", label: "Notifications", icon: "bell", badge: notificationCount },
   ];
 
   const currentItems = items || defaultItems;
@@ -86,17 +114,18 @@ export function BottomNav({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        paddingTop: "12px",
-        paddingBottom: "12px",
-        paddingLeft: "24px",
-        paddingRight: "24px",
-        gap: "22px",
+        paddingTop: "10px",
+        paddingBottom: "10px",
+        paddingLeft: "18px",
+        paddingRight: "18px",
+        gap: "18px",
         borderRadius: "9999px",
         border: "1px solid var(--color-border-subtle, rgba(230, 231, 237, 0.8))",
-        background: "color-mix(in srgb, var(--color-background-surface, #f8f9fc) 60%, transparent)",
+        background: "color-mix(in srgb, var(--color-background-surface, #f8f9fc) 65%, transparent)",
         backdropFilter: "blur(25px)",
         WebkitBackdropFilter: "blur(25px)",
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+        boxShadow: "0 8px 32px rgba(48, 48, 54, 0.08)",
+        transition: "box-shadow 0.2s ease, transform 0.2s ease",
         ...style,
       }}
     >
@@ -111,7 +140,9 @@ export function BottomNav({
               item.onClick?.();
               onSelect?.(item.id);
             }}
+            className="bottom-nav-item"
             style={{
+              position: "relative",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -119,22 +150,62 @@ export function BottomNav({
               gap: "2px",
               background: "transparent",
               border: "none",
-              padding: 0,
+              padding: "4px 8px",
               margin: 0,
               cursor: "pointer",
               outline: "none",
+              borderRadius: "12px",
               color: isSelected ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
-              transition: "color 0.15s ease",
+              transform: isSelected ? "scale(1.02)" : "scale(1)",
+              transition: "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.18s ease, opacity 0.18s ease",
             }}
           >
-            <div style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div
+              style={{
+                position: "relative",
+                width: 24,
+                height: 24,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               {item.icon === "store" ? (
                 <StoreNavIcon selected={isSelected} />
               ) : item.icon === "bag" ? (
                 <BagNavIcon selected={isSelected} />
+              ) : item.icon === "bell" ? (
+                <BellNavIcon selected={isSelected} />
               ) : (
                 item.icon
               )}
+
+              {/* Notification badge / dot */}
+              {item.badge !== undefined && Number(item.badge) > 0 ? (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -7,
+                    minWidth: 16,
+                    height: 16,
+                    paddingInline: 4,
+                    borderRadius: "9999px",
+                    background: "var(--color-action-primary, #dc2b10)",
+                    color: "#ffffff",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                    boxShadow: "0 0 0 1.5px #ffffff, 0 2px 4px rgba(220, 43, 16, 0.3)",
+                    animation: "bottomNavBadgePop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) both",
+                  }}
+                >
+                  {item.badge}
+                </span>
+              ) : null}
             </div>
             <span
               style={{
@@ -143,6 +214,8 @@ export function BottomNav({
                 fontWeight: isSelected ? 600 : 400,
                 color: "inherit",
                 whiteSpace: "nowrap",
+                letterSpacing: isSelected ? "-0.1px" : "0",
+                transition: "color 0.18s ease, font-weight 0.18s ease",
               }}
             >
               {item.label}
@@ -153,3 +226,4 @@ export function BottomNav({
     </nav>
   );
 }
+

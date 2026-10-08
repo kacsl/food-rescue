@@ -4,18 +4,27 @@ import { IconButton } from "valere-DS";
 import { StatusBar } from "./status-bar";
 import "./food-phone.css";
 
-export type FoodScreen = "nearby" | "donations";
+export type FoodScreen = "nearby" | "donations" | "notifications";
 
 type PhoneFrameProps = {
   screen: FoodScreen;
   onScreen: (screen: FoodScreen) => void;
+  notificationCount?: number;
   showCreate?: boolean;
   onCreate?: () => void;
   overlay?: ReactNode;
   children: ReactNode;
 };
 
-export function PhoneFrame({ screen, onScreen, showCreate, onCreate, overlay, children }: PhoneFrameProps) {
+export function PhoneFrame({
+  screen,
+  onScreen,
+  notificationCount,
+  showCreate,
+  onCreate,
+  overlay,
+  children,
+}: PhoneFrameProps) {
   return (
     <div className="food-stage">
       <div className="food-scaler">
@@ -25,7 +34,9 @@ export function PhoneFrame({ screen, onScreen, showCreate, onCreate, overlay, ch
 
           <div className="food-phone__scroll">
             <StatusBar />
-            {children}
+            <div key={screen} className="food-page-view">
+              {children}
+            </div>
           </div>
 
           {showCreate ? (
@@ -41,7 +52,11 @@ export function PhoneFrame({ screen, onScreen, showCreate, onCreate, overlay, ch
           ) : null}
 
           <div className="food-phone__nav">
-            <BottomNav activeId={screen} onSelect={(id) => onScreen(id as FoodScreen)} />
+            <BottomNav
+              activeId={screen}
+              notificationCount={notificationCount}
+              onSelect={(id) => onScreen(id as FoodScreen)}
+            />
           </div>
 
           {overlay}

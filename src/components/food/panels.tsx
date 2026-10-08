@@ -76,13 +76,14 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   return (
     <div
       role="presentation"
+      className="food-sheet-backdrop"
       style={{
         position: "absolute",
         inset: 0,
         zIndex: 4,
         display: "flex",
         alignItems: "flex-end",
-        background: "rgba(48, 48, 54, 0.28)",
+        background: "rgba(48, 48, 54, 0.32)",
       }}
       onClick={onClose}
     >
@@ -90,6 +91,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        className="food-sheet-modal"
         onClick={(event) => event.stopPropagation()}
         style={{
           width: "100%",
@@ -103,6 +105,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
           display: "flex",
           flexDirection: "column",
           gap: 16,
+          boxShadow: "0 -8px 32px rgba(48, 48, 54, 0.16)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -199,6 +202,64 @@ export function NewDonationSheet({ onClose, onPublish }: { onClose: () => void; 
         {error ? <span style={{ fontSize: "var(--font-size-body-xs)", color: "#b8342c" }}>{error}</span> : null}
       </label>
       <Button variant="Primary" size="MD" label="Publish donation" onClick={publish} style={{ width: "100%" }} />
+    </Sheet>
+  );
+}
+
+export type FoodNotification = {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  type: "pickup" | "interest" | "reminder" | "system";
+  actionLabel?: string;
+};
+
+export function NotificationDetail({
+  item,
+  onClose,
+  onAction,
+}: {
+  item: FoodNotification;
+  onClose: () => void;
+  onAction?: () => void;
+}) {
+  return (
+    <Sheet title={item.title} onClose={onClose}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span
+          style={{
+            fontSize: "var(--font-size-body-xs)",
+            color: "var(--color-text-secondary)",
+            padding: "4px 8px",
+            borderRadius: "9999px",
+            background: "var(--color-background-muted)",
+          }}
+        >
+          {item.time}
+        </span>
+        <span style={{ fontSize: "var(--font-size-body-xs)", color: item.read ? "var(--color-text-tertiary)" : "var(--color-action-primary)", fontWeight: 600 }}>
+          {item.read ? "Read" : "New"}
+        </span>
+      </div>
+      <p style={{ margin: 0, color: "var(--color-text-primary)", fontSize: "var(--font-size-body-base)", lineHeight: 1.5 }}>
+        {item.message}
+      </p>
+      {item.actionLabel ? (
+        <Button
+          variant="Primary"
+          size="MD"
+          label={item.actionLabel}
+          onClick={() => {
+            onAction?.();
+            onClose();
+          }}
+          style={{ width: "100%" }}
+        />
+      ) : (
+        <Button variant="Outline" size="MD" label="Close" onClick={onClose} style={{ width: "100%" }} />
+      )}
     </Sheet>
   );
 }
