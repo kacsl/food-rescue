@@ -41,3 +41,20 @@ npm run dev     # local dev server (--webpack)
 npm run build   # production build
 npm run lint    # eslint
 ```
+
+# Surplus Food MVP[cite: 1]
+
+**An app that allows home cooks to post surplus food so nearby neighbors can claim and pick it up before it spoils.**[cite: 1]
+
+## The Problem It Solves
+Home cooks regularly end up with good food they cannot use before it spoils, while budget-conscious neighbors blocks away have no fast way to know it exists.[cite: 1] This app bridges that gap to reduce environmental food waste, save households money, and build a local, trust-based community.[cite: 1]
+
+## Core Features
+* **Post and Claim Food:** Home cooks can offer food for immediate pickup or provide a scheduled pickup time slot.[cite: 1]
+* **Nearby Feed:** Users browse a feed of live listings that displays available food, how far away it is, and a countdown of how much time is left.[cite: 1]
+* **Strict Safety Rules:** Posters must include expiration dates, cook times, and allergen information.[cite: 1] Prepared meals must be no more than 3 days old, and posters must confirm they were kept refrigerated.[cite: 1] Claimers must acknowledge risks before claiming the food.[cite: 1]
+* **Coordination:** Users sign up with phone-verified accounts for basic accountability.[cite: 1] Claimers can access the donor's WhatsApp to align on pickup details.[cite: 1]
+* **Tracking and Notifications:** The app sends push notifications for new nearby listings and when donations are claimed.[cite: 1] After the handoff, both the donor and the claimer can mark the food as picked up.[cite: 1]
+
+## Project Goal
+Our early launch goal is to see at least 20% of listings offered for immediate pickup get claimed and picked up within 60 minutes in our launch neighborhood.[cite: 1] This tests our biggest assumption first: that supply and demand can meet fast enough in one neighborhood.[cite: 1]
