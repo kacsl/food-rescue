@@ -42,8 +42,9 @@ export function StatusBar() {
           <span
             style={{
               position: "absolute",
-              left: 4,
+              left: 13,
               top: 0,
+              transform: "translateX(-50%)",
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: "-0.5px",

@@ -45,7 +45,7 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
       <span style={{ display: "flex", alignItems: "center", gap: 8, padding: 16 }}>
         <span style={{ display: "flex", flex: 1, flexDirection: "column", gap: 8, minWidth: 0 }}>
           <span style={{ fontSize: "var(--font-size-heading-base)", fontWeight: 600, color: "var(--color-text-primary)" }}>{item.title}</span>
-          <span style={{ fontSize: "var(--font-size-body-base)", color: "var(--color-text-secondary)" }}>
+          <span style={{ fontSize: "var(--font-size-body-base)", color: "var(--color-text-secondary)", whiteSpace: "nowrap" }}>
             {item.distance} • {item.area}
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>

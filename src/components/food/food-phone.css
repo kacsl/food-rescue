@@ -3,11 +3,23 @@
  * on the phone so a dark app theme cannot invert the design.
  */
 .food-stage {
+  container-type: inline-size;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
   background: #f6f3ee;
   padding: 24px 16px;
+}
+
+.food-scaler {
+  container-type: size;
+  position: relative;
+  width: min(393px, 100cqi);
+  height: calc(min(393px, 100cqi) * 852 / 393);
+  flex-shrink: 0;
 }
 
 .food-phone {
@@ -32,9 +44,13 @@
   --color-icon-primary: #303036;
   --color-icon-brand: #be240c;
 
-  position: relative;
-  width: min(393px, 100%);
-  height: min(852px, calc(100vh - 48px));
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 393px;
+  height: 852px;
+  transform-origin: top left;
+  transform: scale(calc(100cqw / 393px));
   overflow: hidden;
   background: #ffffff;
   color: #303036;
@@ -48,6 +64,11 @@
   height: 100%;
   overflow-y: auto;
   padding-bottom: 120px;
+  scrollbar-width: none;
+}
+
+.food-phone__scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .food-phone__nav {

@@ -183,7 +183,7 @@ function NearbyView({
       <section style={{ display: "flex", flexDirection: "column", gap: 24, paddingInline: 24 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600 }}>{heading}</h2>
+            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>{heading}</h2>
             <SearchField open={searchOpen} onToggle={onToggleSearch} />
           </div>
           <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
@@ -230,7 +230,7 @@ function DonationsView({
       <section style={{ display: "flex", flexDirection: "column", gap: 24, paddingInline: 24 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600 }}>{query.trim() ? `${String(items.length).padStart(2, "0")} matches` : countLabel}</h2>
+            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>{query.trim() ? `${String(items.length).padStart(2, "0")} matches` : countLabel}</h2>
             <SearchField open={searchOpen} onToggle={onToggleSearch} />
           </div>
           <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
