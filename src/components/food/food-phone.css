@@ -1,0 +1,82 @@
+/*
+ * The food screens are a light-mode Figma frame. Lock the semantic tokens
+ * on the phone so a dark app theme cannot invert the design.
+ */
+.food-stage {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: #f6f3ee;
+  padding: 24px 16px;
+}
+
+.food-phone {
+  --color-background-canvas: #ffffff;
+  --color-background-surface: #ffffff;
+  --color-background-subtle: #f8f9fc;
+  --color-background-muted: #f2f2f6;
+  --color-background-brand-subtle: #ffedec;
+  --color-text-primary: #303036;
+  --color-text-secondary: #5c5c63;
+  --color-text-tertiary: #75757d;
+  --color-text-disabled: #b4b5bd;
+  --color-text-brand: #be240c;
+  --color-text-on-brand: #ffffff;
+  --color-border-subtle: #e6e7ed;
+  --color-border-brand: #dc2b10;
+  --color-border-focus: #be240c;
+  --color-action-primary: #dc2b10;
+  --color-action-primary-hover: #be240c;
+  --color-action-primary-pressed: #971a07;
+  --color-action-on-action: #ffffff;
+  --color-icon-primary: #303036;
+  --color-icon-brand: #be240c;
+
+  position: relative;
+  width: min(393px, 100%);
+  height: min(852px, calc(100vh - 48px));
+  overflow: hidden;
+  background: #ffffff;
+  color: #303036;
+  color-scheme: light;
+  box-shadow: 0 24px 64px rgba(48, 48, 54, 0.14);
+}
+
+.food-phone__scroll {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: 120px;
+}
+
+.food-phone__nav {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+}
+
+.food-phone__fab {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  bottom: 118px;
+}
+
+.food-blob {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.food-blob--bottom {
+  left: -224px;
+  top: 313px;
+}
+
+.food-blob--top {
+  left: -38px;
+  top: -133px;
+}

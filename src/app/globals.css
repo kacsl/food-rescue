@@ -1,0 +1,27 @@
+/*
+ * App-level reset and global baseline.
+ * Colors, type, radius and spacing come strictly from the CSS variables
+ * defined in @/styles/tokens.css and valere-DS/styles.css.
+ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-background-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-brand);
+  font-weight: var(--font-weight-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+a {
+  color: var(--color-text-brand);
+  text-decoration: none;
+}
