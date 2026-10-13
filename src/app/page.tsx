@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "valere-DS";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ds/logo";
 import { BadgeChipShowcase } from "@/components/showcase/badge-chip-showcase";
@@ -34,29 +33,20 @@ function ShowcaseHeader() {
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-md)" }}>
         {/* C48 - Logo Component Showcase */}
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-inline-md)", flexWrap: "wrap" }}>
-          <Logo variant="landscape" size="md" />
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-inline-xs)" }}>
-            <Logo variant="icon" size="sm" withContainer />
-            <Badge tone="Brand" emphasis="Solid" label="C48 - Logo" />
-          </div>
-        </div>
+        <Logo variant="landscape" size="md" />
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-xs)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-inline-sm)" }}>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "var(--font-size-heading-lg)",
-                fontWeight: "var(--font-weight-bold)",
-                letterSpacing: "var(--letter-spacing-tight)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              Design System Components
-            </h1>
-            <Badge tone="Brand" emphasis="Subtle" label="Kari Project 1" />
-          </div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "var(--font-size-heading-lg)",
+              fontWeight: "var(--font-weight-bold)",
+              letterSpacing: "var(--letter-spacing-tight)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            Design System Components
+          </h1>
           <p
             style={{
               margin: 0,

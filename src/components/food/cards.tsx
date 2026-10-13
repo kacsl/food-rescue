@@ -1,5 +1,5 @@
 import { Badge } from "valere-DS";
-import { ClockIcon, ShieldCheckIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 
 const cardChrome = {
   width: "100%",
@@ -48,6 +48,16 @@ export type NearbyFood = {
   claimedSlot?: string;
 };
 
+function deliveryBadge(item: NearbyFood): { label: string; tone: "Neutral" } {
+  if (item.status === "expired" || item.minutesLeft <= 0) return { label: "Expired", tone: "Neutral" };
+  if (item.status === "picked_up") return { label: "Picked up", tone: "Neutral" };
+  if (item.status === "claimed") return { label: "Claimed", tone: "Neutral" };
+  if (item.pickupType === "scheduled" || item.badge === "Needs scheduling") {
+    return { label: "Needs scheduling", tone: "Neutral" };
+  }
+  return { label: "Available now", tone: "Neutral" };
+}
+
 export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: NearbyFood) => void }) {
   const isExpired = item.status === "expired" || item.minutesLeft <= 0;
   const isClaimed = item.status === "claimed";
@@ -63,11 +73,6 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
         display: "flex",
         flexDirection: "column",
         opacity: isExpired ? 0.72 : 1,
-        borderColor: isClaimed
-          ? "var(--color-border-brand, #dc2b10)"
-          : isExpired
-          ? "var(--color-border-subtle, #e6e7ed)"
-          : "var(--color-border-subtle, #e6e7ed)",
       }}
     >
       <span style={{ position: "relative", display: "block", aspectRatio: "1500 / 1000", overflow: "hidden" }}>
@@ -91,61 +96,13 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
           }}
         />
 
-        {/* Top Badges: Countdown Timer + Status */}
-        <span
-          style={{
-            position: "absolute",
-            top: 8,
-            left: 8,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "4px 8px",
-            borderRadius: "var(--radius-pill, 9999px)",
-            background: isExpired
-              ? "rgba(117, 117, 125, 0.88)"
-              : item.pickupType === "immediate"
-              ? "rgba(220, 43, 16, 0.92)"
-              : "rgba(48, 48, 54, 0.85)",
-            color: "#ffffff",
-            fontSize: "11px",
-            fontWeight: 700,
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-          }}
-        >
-          <ClockIcon width={13} height={13} strokeWidth={2.4} aria-hidden="true" />
-          <span>{item.timeLeft}</span>
-        </span>
-
+        {/* Top-right delivery badge */}
         <span style={{ position: "absolute", top: 8, right: 9 }}>
-          {isClaimed ? (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "3px 8px",
-                borderRadius: "9999px",
-                background: "var(--color-background-brand-subtle, #ffedec)",
-                color: "var(--color-text-brand, #be240c)",
-                border: "1px solid var(--color-border-brand, #dc2b10)",
-                fontSize: "11px",
-                fontWeight: 700,
-              }}
-            >
-              Claimed
-            </span>
-          ) : isExpired ? (
-            <Badge tone="Neutral" emphasis="Solid" label="Expired" />
-          ) : (
-            <Badge
-              tone={item.badge === "Available now" ? "Brand" : "Neutral"}
-              emphasis="Subtle"
-              label={item.badge}
-            />
-          )}
+          <Badge
+            tone={deliveryBadge(item).tone}
+            emphasis="Subtle"
+            label={deliveryBadge(item).label}
+          />
         </span>
       </span>
 
@@ -154,7 +111,7 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
         <span style={{ display: "flex", flex: 1, flexDirection: "column", gap: 6, minWidth: 0 }}>
           <span
             style={{
-              fontSize: "var(--font-size-heading-base, 18px)",
+              fontSize: 18,
               fontWeight: 600,
               color: "var(--color-text-primary, #303036)",
             }}
@@ -172,37 +129,6 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
             {item.distance} • {item.area}
           </span>
 
-          {/* Freshness, Cook Time & Allergens preview */}
-          <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "var(--color-text-brand, #be240c)",
-                background: "var(--color-background-brand-subtle, #ffedec)",
-                padding: "2px 6px",
-                borderRadius: "6px",
-              }}
-            >
-              {item.foodAge}
-            </span>
-
-            <span
-              style={{
-                fontSize: "11px",
-                color: "var(--color-text-tertiary, #75757d)",
-                background: "var(--color-background-muted, #f2f2f6)",
-                padding: "2px 6px",
-                borderRadius: "6px",
-              }}
-            >
-              {item.allergens.length === 0
-                ? "No allergens"
-                : `Contains ${item.allergens.slice(0, 2).join(", ")}`}
-            </span>
-          </span>
-
-          {/* Host info with verified check */}
           <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
             <img
               src="/food/karina.png"
@@ -215,19 +141,8 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
               {item.host}
             </span>
             {item.hostVerified !== false ? (
-              <span
-                title="Phone verified neighbor"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 2,
-                  fontSize: "10px",
-                  color: "#287d3c",
-                  fontWeight: 600,
-                }}
-              >
-                <ShieldCheckIcon width={13} height={13} />
-                <span>Verified</span>
+              <span title="Phone verified neighbor" style={{ display: "inline-flex", color: "var(--color-text-tertiary, #75757d)" }}>
+                <ShieldCheckIcon width={14} height={14} aria-hidden="true" />
               </span>
             ) : null}
           </span>
@@ -244,7 +159,7 @@ export function NearbyCard({ item, onOpen }: { item: NearbyFood; onOpen: (item: 
             flexShrink: 0,
           }}
         >
-          <img src="/food/chevron.svg" width={16} height={16} alt="" />
+          <ChevronRightIcon width={16} height={16} aria-hidden="true" style={{ color: "var(--color-text-tertiary, #75757d)" }} />
         </span>
       </span>
     </button>
@@ -285,10 +200,7 @@ export function ListingCard({ item, onOpen }: { item: Donation; onOpen: (item: D
         alignItems: "center",
         gap: 12,
         minHeight: 84,
-        background: isClaimed ? "rgba(255, 237, 236, 0.7)" : "#ffffff",
-        border: isClaimed
-          ? "1.5px solid var(--color-action-primary, #dc2b10)"
-          : "1px solid var(--color-border-subtle, #e6e7ed)",
+        background: "#ffffff",
       }}
     >
       <span
@@ -307,13 +219,6 @@ export function ListingCard({ item, onOpen }: { item: Donation; onOpen: (item: D
           className="food-card-img"
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
-        <span
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(to left, rgba(255, 255, 255, 0.3) 40%, rgba(255, 255, 255, 0.7) 100%)",
-          }}
-        />
       </span>
 
       <span style={{ display: "flex", flex: 1, flexDirection: "column", gap: 4, minWidth: 0, paddingBlock: 10 }}>
@@ -330,51 +235,14 @@ export function ListingCard({ item, onOpen }: { item: Donation; onOpen: (item: D
           {item.title}
         </span>
 
-        {isClaimed ? (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "var(--color-action-primary, #dc2b10)",
-            }}
-          >
-            <span>🚨 Claimed by {item.claimedBy || "Neighbor"}</span>
-            <span style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>
-              • {item.claimedSlot || "4:00 PM"}
-            </span>
-          </span>
-        ) : isClosed ? (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "#287d3c",
-            }}
-          >
-            <CheckCircleIcon width={14} height={14} />
-            <span>Picked up • Rescued in 42m</span>
-          </span>
-        ) : (
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: "var(--font-size-body-xs, 12px)", color: "var(--color-text-secondary)" }}>
-              {item.interested === 0
-                ? "No claims yet"
-                : `${item.interested} interested neighbor${item.interested === 1 ? "" : "s"}`}
-            </span>
-            <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)" }}>
-              • {item.timeLeft || "45m left"}
-            </span>
-          </span>
-        )}
-
-        <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)" }}>
-          {item.foodAge || "Cooked today"} • {item.allergens?.length ? item.allergens.join(", ") : "Allergen-free"}
+        <span style={{ fontSize: "var(--font-size-body-xs, 12px)", color: "var(--color-text-secondary)" }}>
+          {isClaimed
+            ? `Claimed by ${item.claimedBy || "a neighbor"} · ${item.claimedSlot || "4:00 PM"}`
+            : isClosed
+            ? "Picked up"
+            : item.interested === 0
+            ? `No claims yet · ${item.timeLeft || "45m left"}`
+            : `${item.interested} interested · ${item.timeLeft || "45m left"}`}
         </span>
       </span>
 
@@ -390,7 +258,7 @@ export function ListingCard({ item, onOpen }: { item: Donation; onOpen: (item: D
           flexShrink: 0,
         }}
       >
-        <img src="/food/chevron.svg" width={16} height={16} alt="" />
+        <ChevronRightIcon width={16} height={16} aria-hidden="true" style={{ color: "var(--color-text-tertiary, #75757d)" }} />
       </span>
     </button>
   );

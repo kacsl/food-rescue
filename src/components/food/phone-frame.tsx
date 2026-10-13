@@ -12,6 +12,8 @@ type PhoneFrameProps = {
   notificationCount?: number;
   showCreate?: boolean;
   onCreate?: () => void;
+  hideNav?: boolean;
+  hideBlobs?: boolean;
   overlay?: ReactNode;
   children: ReactNode;
 };
@@ -22,6 +24,8 @@ export function PhoneFrame({
   notificationCount,
   showCreate,
   onCreate,
+  hideNav = false,
+  hideBlobs = false,
   overlay,
   children,
 }: PhoneFrameProps) {
@@ -29,17 +33,27 @@ export function PhoneFrame({
     <div className="food-stage">
       <div className="food-scaler">
         <div className="food-phone">
-          <img className="food-blob food-blob--bottom" src="/food/blob-bottom.svg" width={595} height={583.19} alt="" />
-          <img className="food-blob food-blob--top" src="/food/blob-top.svg" width={629} height={618} alt="" />
+          {!hideBlobs && (
+            <>
+              <img className="food-blob food-blob--bottom" src="/food/blob-bottom.svg" width={595} height={583.19} alt="" />
+              <img className="food-blob food-blob--top" src="/food/blob-top.svg" width={629} height={618} alt="" />
+            </>
+          )}
 
-          <div className="food-phone__scroll">
+          <div
+            className="food-phone__scroll"
+            style={{
+              paddingBottom: hideNav ? 32 : 120,
+              background: hideBlobs ? "var(--color-background-canvas, #ffffff)" : "transparent",
+            }}
+          >
             <StatusBar />
             <div key={screen} className="food-page-view">
               {children}
             </div>
           </div>
 
-          {showCreate ? (
+          {showCreate && !hideNav ? (
             <div className="food-phone__fab">
               <IconButton
                 variant="Primary"
@@ -51,13 +65,15 @@ export function PhoneFrame({
             </div>
           ) : null}
 
-          <div className="food-phone__nav">
-            <BottomNav
-              activeId={screen}
-              notificationCount={notificationCount}
-              onSelect={(id) => onScreen(id as FoodScreen)}
-            />
-          </div>
+          {!hideNav && (
+            <div className="food-phone__nav">
+              <BottomNav
+                activeId={screen}
+                notificationCount={notificationCount}
+                onSelect={(id) => onScreen(id as FoodScreen)}
+              />
+            </div>
+          )}
 
           {overlay}
         </div>

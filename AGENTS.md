@@ -6,12 +6,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
+<!-- END:nextjs-agent-rules -->
+
 Always refer to "surplus_food_brd_mvp.md" when creating a new feature
 
 Always use the design system and tokens when designing anything new. 
 
 Always ask questions when constraints aren't clear
-
-<!-- END:nextjs-agent-rules -->
-
-

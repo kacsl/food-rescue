@@ -271,3 +271,75 @@
   background: rgba(255, 255, 255, 0.45) !important;
   border: 1.5px solid var(--color-action-primary, #dc2b10) !important;
 }
+
+/* =========================================================================
+   DESIGN SYSTEM ICON-BUTTON HOVER / ACTIVE PATCH
+   valere-DS IconButton sets inline styles for Default state without CSS
+   hover/active rules in button.css. These rules restore hover & press states.
+   ========================================================================= */
+
+.evolve-icon-button {
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.16s ease;
+}
+
+.evolve-icon-button[data-variant="Ghost"][data-state="Default"]:hover:not(:disabled) {
+  background: var(--color-background-muted, #f2f2f6) !important;
+}
+
+.evolve-icon-button[data-variant="Ghost"][data-state="Default"]:active:not(:disabled) {
+  background: var(--color-border-subtle, #e6e7ed) !important;
+  transform: scale(0.95);
+}
+
+.evolve-icon-button[data-variant="Outline"][data-state="Default"],
+.evolve-icon-button[data-variant="Outline"][data-state="Hover"] {
+  border-color: var(--color-border-subtle, #e6e7ed) !important;
+}
+
+.evolve-icon-button[data-variant="Outline"][data-state="Default"]:hover:not(:disabled) {
+  background: var(--color-background-brand-subtle, #ffedec) !important;
+  border-color: var(--color-border-subtle, #e6e7ed) !important;
+  transform: scale(1.06);
+}
+
+.evolve-icon-button[data-variant="Outline"][data-state="Default"]:active:not(:disabled) {
+  background: var(--color-background-brand-subtle, #ffedec) !important;
+  border-color: var(--color-border-focus, #be240c) !important;
+  transform: scale(0.95);
+}
+
+.evolve-button {
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.16s ease;
+}
+
+.evolve-button[data-state="Default"]:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+/* =========================================================================
+   SETTINGS ROW & CHIP HOVER / ACTIVE STATES
+   ========================================================================= */
+
+.ds-settings-row {
+  transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.ds-settings-row:hover {
+  background-color: var(--color-background-muted, #f2f2f6) !important;
+}
+
+.ds-settings-row:active {
+  background-color: var(--color-border-subtle, #e6e7ed) !important;
+  transform: scale(0.99);
+}
+
+.ds-settings-row__chevron {
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.16s ease;
+}
+
+.ds-settings-row:hover .ds-settings-row__chevron {
+  transform: translateX(3px);
+  color: var(--color-text-primary, #303036) !important;
+}
+
+

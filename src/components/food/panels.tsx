@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Button, IconButton } from "valere-DS";
 import type { Donation, NearbyFood } from "./cards";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
@@ -6,7 +6,6 @@ import {
   ClockIcon,
   ShieldCheckIcon,
   MapPinIcon,
-  CheckCircleIcon,
   ExclamationTriangleIcon,
   PhoneIcon,
   ChatBubbleLeftRightIcon,
@@ -137,8 +136,8 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
 
 function CloseMark() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M4 4l8 8M12 4l-8 8" stroke="#DC2B10" strokeWidth="1.75" strokeLinecap="round" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ color: "var(--color-text-primary, #303036)" }}>
+      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
     </svg>
   );
 }
@@ -191,155 +190,55 @@ export function NearbyDetail({
             gap: 6,
             padding: "6px 12px",
             borderRadius: "9999px",
-            background: isExpired ? "rgba(117, 117, 125, 0.9)" : "rgba(220, 43, 16, 0.94)",
+            background: isExpired ? "rgba(117, 117, 125, 0.9)" : "rgba(48, 48, 54, 0.85)",
             color: "#ffffff",
             fontSize: "12px",
             fontWeight: 700,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
           }}
         >
-          <ClockIcon width={14} height={14} strokeWidth={2.4} />
-          <span>{isExpired ? "Expired" : `${item.timeLeft} for pickup`}</span>
+          <ClockIcon width={14} height={14} strokeWidth={2} />
+          <span>{isExpired ? "Expired" : item.timeLeft}</span>
         </div>
       </div>
 
-      {/* Host & Location Info */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img
-            src="/food/karina.png"
-            alt=""
-            width={32}
-            height={32}
-            style={{ width: 32, height: 32, borderRadius: 9999, objectFit: "cover" }}
-          />
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--color-text-primary)" }}>
-              {item.host}
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-              {item.distance} • {item.area}
-            </div>
-          </div>
-        </div>
-
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: "11px",
-            fontWeight: 600,
-            color: "#287d3c",
-            background: "#edf7ee",
-            padding: "4px 8px",
-            borderRadius: "9999px",
-          }}
-        >
-          <ShieldCheckIcon width={14} height={14} />
-          <span>Phone Verified</span>
-        </span>
-      </div>
-
-      {/* Freshness & Safety Card (BRD Requirement) */}
-      <div
-        style={{
-          padding: 14,
-          borderRadius: "12px",
-          background: "var(--color-background-subtle, #f8f9fc)",
-          border: "1px solid var(--color-border-subtle, #e6e7ed)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-        }}
-      >
-        <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
-          <ShieldCheckIcon width={16} height={16} color="var(--color-action-primary, #dc2b10)" />
-          <span>Food Safety & Freshness Check</span>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: "12px" }}>
-          <div>
-            <span style={{ color: "var(--color-text-tertiary)", display: "block" }}>Cooked / Prepared:</span>
-            <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{item.foodAge}</span>
-          </div>
-          <div>
-            <span style={{ color: "var(--color-text-tertiary)", display: "block" }}>Refrigeration:</span>
-            <span style={{ fontWeight: 600, color: "#287d3c" }}>✓ Continuous cold</span>
-          </div>
-        </div>
-
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <img
+          src="/food/karina.png"
+          alt=""
+          width={32}
+          height={32}
+          style={{ width: 32, height: 32, borderRadius: 9999, objectFit: "cover" }}
+        />
         <div>
-          <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)", display: "block", marginBottom: 4 }}>
-            Allergens:
-          </span>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {item.allergens.length === 0 ? (
-              <span
-                style={{
-                  fontSize: "11px",
-                  background: "#edf7ee",
-                  color: "#287d3c",
-                  padding: "3px 8px",
-                  borderRadius: "6px",
-                  fontWeight: 600,
-                }}
-              >
-                No allergens declared
+          <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "14px", fontWeight: 600, color: "var(--color-text-primary)" }}>
+            {item.host}
+            {item.hostVerified !== false ? (
+              <span title="Phone verified neighbor" style={{ display: "inline-flex", color: "var(--color-text-tertiary)" }}>
+                <ShieldCheckIcon width={14} height={14} aria-hidden="true" />
               </span>
-            ) : (
-              item.allergens.map((allergen) => (
-                <span
-                  key={allergen}
-                  style={{
-                    fontSize: "11px",
-                    background: "var(--color-background-brand-subtle, #ffedec)",
-                    color: "var(--color-text-brand, #be240c)",
-                    padding: "3px 8px",
-                    borderRadius: "6px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {allergen}
-                </span>
-              ))
-            )}
+            ) : null}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
+            {item.distance} • {item.area}
           </div>
         </div>
       </div>
 
-      {/* Pickup Slot Selection (BRD: immediate or scheduled slots) */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "13px", color: "var(--color-text-primary)" }}>
+        <span style={{ fontWeight: 700 }}>Freshness</span>
+        <span>Prepared: {item.foodAge}</span>
+        <span>Refrigeration: {item.keptRefrigerated ? "Kept cold" : "Not confirmed"}</span>
+        <span>Allergens: {item.allergens.length === 0 ? "None" : item.allergens.join(", ")}</span>
+      </div>
+
       <div>
         <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)", display: "block", marginBottom: 8 }}>
-          {item.pickupType === "immediate" ? "Pickup Window (Immediate)" : "Choose a Pickup Slot:"}
+          {item.pickupType === "immediate" ? "Pickup" : "Choose a pickup slot"}
         </span>
 
         {item.pickupType === "immediate" ? (
-          <div
-            style={{
-              padding: "10px 14px",
-              borderRadius: "10px",
-              background: "#fff5f4",
-              border: "1.5px solid var(--color-action-primary, #dc2b10)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "16px" }}>⚡️</span>
-              <div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-                  Immediate Pickup (Next 60 min)
-                </div>
-                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                  Must be collected within 60m to prevent waste
-                </div>
-              </div>
-            </div>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-action-primary)" }}>
-              Active
-            </span>
+          <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)" }}>
+            Immediate pickup (next 60 min)
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -356,13 +255,10 @@ export function NearbyDetail({
                     justifyContent: "space-between",
                     padding: "10px 14px",
                     borderRadius: "10px",
-                    border: isSelected
-                      ? "1.5px solid var(--color-action-primary, #dc2b10)"
-                      : "1px solid var(--color-border-subtle, #e6e7ed)",
-                    background: isSelected ? "var(--color-background-brand-subtle, #ffedec)" : "#ffffff",
+                    border: "1px solid var(--color-border-subtle, #e6e7ed)",
+                    background: isSelected ? "var(--color-background-muted, #f2f2f6)" : "#ffffff",
                     cursor: "pointer",
                     textAlign: "left",
-                    transition: "all 0.15s ease",
                   }}
                 >
                   <span style={{ fontSize: "13px", fontWeight: isSelected ? 700 : 500, color: "var(--color-text-primary)" }}>
@@ -373,7 +269,7 @@ export function NearbyDetail({
                       width: 16,
                       height: 16,
                       borderRadius: 9999,
-                      border: isSelected ? "5px solid var(--color-action-primary)" : "2px solid #b4b5bd",
+                      border: isSelected ? "5px solid var(--color-text-primary)" : "2px solid #b4b5bd",
                       background: "#fff",
                     }}
                   />
@@ -384,13 +280,6 @@ export function NearbyDetail({
         )}
       </div>
 
-      {/* Address Unlock Notice */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "12px", color: "var(--color-text-secondary)" }}>
-        <MapPinIcon width={16} height={16} color="var(--color-action-primary)" />
-        <span>Exact pickup address & donor WhatsApp unlock immediately upon claiming.</span>
-      </div>
-
-      {/* Risk Acknowledgment Checkbox (BRD Mandate) */}
       <label
         style={{
           display: "flex",
@@ -398,17 +287,15 @@ export function NearbyDetail({
           gap: 10,
           padding: "12px",
           borderRadius: "10px",
-          background: riskAcknowledged ? "#fff5f4" : "var(--color-background-muted, #f2f2f6)",
-          border: `1px solid ${riskAcknowledged ? "var(--color-action-primary)" : "var(--color-border-subtle)"}`,
+          background: "var(--color-background-muted, #f2f2f6)",
           cursor: "pointer",
-          transition: "all 0.18s ease",
         }}
       >
         <input
           type="checkbox"
           checked={riskAcknowledged}
           onChange={(e) => setRiskAcknowledged(e.target.checked)}
-          style={{ width: 18, height: 18, marginTop: 2, accentColor: "var(--color-action-primary, #dc2b10)", cursor: "pointer" }}
+          style={{ width: 18, height: 18, marginTop: 2, accentColor: "var(--color-text-primary, #303036)", cursor: "pointer" }}
         />
         <span style={{ fontSize: "12px", lineHeight: "17px", color: "var(--color-text-primary)" }}>
           <strong>Safety risk acknowledgment:</strong> I understand this food is prepared by a neighbor home cook. I agree to inspect freshness upon pickup and consume at my own discretion.
@@ -473,29 +360,10 @@ export function ClaimHandoffSheet({
   }
 
   return (
-    <Sheet title="Food Claimed!" onClose={onClose}>
-      {/* Celebration Banner */}
-      <div
-        style={{
-          padding: "16px",
-          borderRadius: "14px",
-          background: "linear-gradient(135deg, #ffedec 0%, #fff7f6 100%)",
-          border: "1.5px solid var(--color-action-primary, #dc2b10)",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <span style={{ fontSize: "28px" }}>🎉</span>
-        <div>
-          <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-            You&apos;re rescuing {food.title}!
-          </div>
-          <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-            Pickup coordinated with {food.host}. Keep the 60m neighborhood goal!
-          </div>
-        </div>
-      </div>
+    <Sheet title="Food claimed" onClose={onClose}>
+      <p style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" }}>
+        You&apos;re rescuing {food.title}.
+      </p>
 
       {/* Address Card (Revealed after claim) */}
       <div
@@ -504,7 +372,6 @@ export function ClaimHandoffSheet({
           borderRadius: "12px",
           background: "#ffffff",
           border: "1px solid var(--color-border-subtle, #e6e7ed)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
           display: "flex",
           flexDirection: "column",
           gap: 8,
@@ -520,7 +387,7 @@ export function ClaimHandoffSheet({
             style={{
               border: "none",
               background: "transparent",
-              color: "var(--color-action-primary)",
+              color: "var(--color-text-secondary)",
               fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
@@ -531,7 +398,7 @@ export function ClaimHandoffSheet({
         </div>
 
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-          <MapPinIcon width={20} height={20} color="var(--color-action-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <MapPinIcon width={20} height={20} color="var(--color-text-secondary)" style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
             <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-text-primary)" }}>
               {food.address || "Rua das Acácias, 142, Apt 4B"}
@@ -555,22 +422,13 @@ export function ClaimHandoffSheet({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ClockIcon width={18} height={18} color="var(--color-action-primary)" />
+          <ClockIcon width={18} height={18} color="var(--color-text-secondary)" />
           <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-text-primary)" }}>
             Slot: {selectedSlot}
           </span>
         </div>
-        <span
-          style={{
-            fontSize: "11px",
-            fontWeight: 700,
-            color: "var(--color-action-primary)",
-            background: "var(--color-background-brand-subtle)",
-            padding: "2px 8px",
-            borderRadius: "9999px",
-          }}
-        >
-          45m left
+        <span style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>
+          {food.timeLeft}
         </span>
       </div>
 
@@ -593,7 +451,6 @@ export function ClaimHandoffSheet({
           alignItems: "center",
           justifyContent: "center",
           gap: 8,
-          boxShadow: "0 4px 14px rgba(37, 211, 102, 0.3)",
         }}
       >
         <ChatBubbleLeftRightIcon width={18} height={18} />
@@ -626,6 +483,31 @@ export function ClaimHandoffSheet({
       </button>
     </Sheet>
   );
+}
+
+function selectedChoice(selected: boolean, warning = false): CSSProperties {
+  if (selected && warning) {
+    return {
+      border: "1px solid #d7463c",
+      background: "#ffebeb",
+      color: "#9c1b12",
+      fontWeight: 700,
+    };
+  }
+  if (selected) {
+    return {
+      border: "1px solid var(--color-text-primary, #303036)",
+      background: "var(--color-background-muted, #f2f2f6)",
+      color: "var(--color-text-primary, #303036)",
+      fontWeight: 700,
+    };
+  }
+  return {
+    border: "1px solid var(--color-border-subtle, #e6e7ed)",
+    background: "#fff",
+    color: "var(--color-text-primary, #303036)",
+    fontWeight: 500,
+  };
 }
 
 /**
@@ -742,14 +624,12 @@ export function NewDonationSheet({
             style={{
               padding: "8px 12px",
               borderRadius: "8px",
-              border: category === "prepared" ? "1.5px solid var(--color-action-primary)" : "1px solid var(--color-border-subtle)",
-              background: category === "prepared" ? "var(--color-background-brand-subtle)" : "#fff",
-              fontWeight: category === "prepared" ? 700 : 500,
               fontSize: "13px",
               cursor: "pointer",
+              ...selectedChoice(category === "prepared"),
             }}
           >
-            🍲 Prepared Meal
+            Prepared meal
           </button>
           <button
             type="button"
@@ -757,28 +637,21 @@ export function NewDonationSheet({
             style={{
               padding: "8px 12px",
               borderRadius: "8px",
-              border: category === "produce" ? "1.5px solid var(--color-action-primary)" : "1px solid var(--color-border-subtle)",
-              background: category === "produce" ? "var(--color-background-brand-subtle)" : "#fff",
-              fontWeight: category === "produce" ? 700 : 500,
               fontSize: "13px",
               cursor: "pointer",
+              ...selectedChoice(category === "produce"),
             }}
           >
-            🍎 Fresh Produce / Pantry
+            Fresh produce
           </button>
         </div>
       </div>
 
       {/* Field 3: Cook Time / Freshness (Poka-Yoke 3-Day Rule) */}
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-            When was it prepared? *
-          </span>
-          <span style={{ fontSize: "11px", fontWeight: 600, color: fails3DayRule ? "#b8342c" : "var(--color-text-tertiary)" }}>
-            Max 3 days allowed
-          </span>
-        </div>
+        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)", display: "block", marginBottom: 6 }}>
+          When was it prepared? Max 3 days.
+        </span>
 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {[
@@ -798,19 +671,8 @@ export function NewDonationSheet({
                   padding: "6px 12px",
                   borderRadius: "9999px",
                   fontSize: "12px",
-                  fontWeight: isSelected ? 700 : 500,
-                  border: isSelected
-                    ? option.days > 3
-                      ? "1.5px solid #d7463c"
-                      : "1.5px solid var(--color-action-primary)"
-                    : "1px solid var(--color-border-subtle)",
-                  background: isSelected
-                    ? option.days > 3
-                      ? "#ffebeb"
-                      : "var(--color-action-primary)"
-                    : "#fff",
-                  color: isSelected && option.days <= 3 ? "#fff" : option.days > 3 && isSelected ? "#b8342c" : "var(--color-text-primary)",
                   cursor: "pointer",
+                  ...selectedChoice(isSelected, option.days > 3),
                 }}
               >
                 {option.label}
@@ -852,8 +714,8 @@ export function NewDonationSheet({
           gap: 10,
           padding: "10px 12px",
           borderRadius: "8px",
-          background: keptRefrigerated ? "#f4faf5" : "#fff",
-          border: `1px solid ${keptRefrigerated ? "#287d3c" : "var(--color-border-subtle)"}`,
+          background: keptRefrigerated ? "var(--color-background-muted, #f2f2f6)" : "#fff",
+          border: "1px solid var(--color-border-subtle)",
           cursor: "pointer",
         }}
       >
@@ -861,10 +723,10 @@ export function NewDonationSheet({
           type="checkbox"
           checked={keptRefrigerated}
           onChange={(e) => setKeptRefrigerated(e.target.checked)}
-          style={{ width: 16, height: 16, accentColor: "#287d3c" }}
+          style={{ width: 16, height: 16, accentColor: "var(--color-text-primary, #303036)" }}
         />
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-primary)" }}>
-          ❄️ I confirm this food was kept continuously refrigerated. *
+        <span style={{ fontSize: "12px", fontWeight: keptRefrigerated ? 700 : 500, color: "var(--color-text-primary)" }}>
+          I confirm this food was kept continuously refrigerated.
         </span>
       </label>
 
@@ -885,14 +747,11 @@ export function NewDonationSheet({
                   padding: "4px 10px",
                   borderRadius: "6px",
                   fontSize: "11px",
-                  fontWeight: active ? 700 : 500,
-                  border: active ? "1.5px solid var(--color-action-primary)" : "1px solid var(--color-border-subtle)",
-                  background: active ? "var(--color-background-brand-subtle)" : "#fff",
-                  color: active ? "var(--color-text-brand)" : "var(--color-text-secondary)",
                   cursor: "pointer",
+                  ...selectedChoice(active),
                 }}
               >
-                {allergen === "None" ? "✓ None" : allergen}
+                {allergen}
               </button>
             );
           })}
@@ -912,8 +771,7 @@ export function NewDonationSheet({
               justifyContent: "space-between",
               padding: "10px 12px",
               borderRadius: "8px",
-              border: pickupType === "immediate" ? "1.5px solid var(--color-action-primary)" : "1px solid var(--color-border-subtle)",
-              background: pickupType === "immediate" ? "#fff5f4" : "#fff",
+              ...selectedChoice(pickupType === "immediate"),
               cursor: "pointer",
             }}
           >
@@ -923,20 +781,17 @@ export function NewDonationSheet({
                 name="pickupType"
                 checked={pickupType === "immediate"}
                 onChange={() => setPickupType("immediate")}
-                style={{ accentColor: "var(--color-action-primary)" }}
+                style={{ accentColor: "var(--color-text-primary, #303036)" }}
               />
               <div>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-                  ⚡️ Immediate pickup (Next 60 min)
+                  Immediate pickup (next 60 min)
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
                   Supports our 60-minute neighborhood rescue goal
                 </div>
               </div>
             </div>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--color-action-primary)", background: "var(--color-background-brand-subtle)", padding: "2px 6px", borderRadius: 4 }}>
-              MVP Target
-            </span>
           </label>
 
           <label
@@ -946,8 +801,7 @@ export function NewDonationSheet({
               justifyContent: "space-between",
               padding: "10px 12px",
               borderRadius: "8px",
-              border: pickupType === "scheduled" ? "1.5px solid var(--color-action-primary)" : "1px solid var(--color-border-subtle)",
-              background: pickupType === "scheduled" ? "#fff5f4" : "#fff",
+              ...selectedChoice(pickupType === "scheduled"),
               cursor: "pointer",
             }}
           >
@@ -957,11 +811,11 @@ export function NewDonationSheet({
                 name="pickupType"
                 checked={pickupType === "scheduled"}
                 onChange={() => setPickupType("scheduled")}
-                style={{ accentColor: "var(--color-action-primary)" }}
+                style={{ accentColor: "var(--color-text-primary, #303036)" }}
               />
               <div>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-                  🗓 Scheduled pickup window
+                  Scheduled pickup window
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
                   Set a specific window for neighbor pickup
@@ -1000,7 +854,7 @@ export function NewDonationSheet({
         variant="Primary"
         size="MD"
         disabled={fails3DayRule || !keptRefrigerated || !title.trim()}
-        label={fails3DayRule ? "Blocked by 3-day rule" : "Publish Donation"}
+        label={fails3DayRule ? "Blocked by 3-day rule" : "Publish donation"}
         onClick={handlePublish}
         style={{ width: "100%", height: 46 }}
       />
@@ -1046,8 +900,8 @@ export function PhoneVerificationModal({
             width: 48,
             height: 48,
             borderRadius: 9999,
-            background: "var(--color-background-brand-subtle)",
-            color: "var(--color-action-primary)",
+            background: "var(--color-background-muted, #f2f2f6)",
+            color: "var(--color-text-secondary)",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1104,7 +958,7 @@ export function PhoneVerificationModal({
                 textAlign: "center",
                 letterSpacing: "8px",
                 borderRadius: "8px",
-                border: "1.5px solid var(--color-action-primary)",
+                border: "1px solid var(--color-border-subtle)",
                 fontSize: "22px",
                 fontWeight: 700,
               }}
@@ -1159,35 +1013,15 @@ export function DonationDetail({
 
       {/* Claim Status Notification for Donor */}
       {isClaimed ? (
-        <div
-          style={{
-            padding: 14,
-            borderRadius: "12px",
-            background: "#fff5f4",
-            border: "1.5px solid var(--color-action-primary, #dc2b10)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-action-primary)" }}>
-              🎉 Food Claimed by Neighbor!
-            </span>
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "#287d3c", background: "#edf7ee", padding: "2px 6px", borderRadius: 4 }}>
-              Slot: {item.claimedSlot || "4:00 PM"}
-            </span>
-          </div>
-
-          <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary)", lineHeight: 1.4 }}>
-            <strong>{item.claimedBy || "Dev"}</strong> has claimed this donation. Your address was securely released.
+        <>
+          <p style={{ margin: 0, fontSize: "14px", color: "var(--color-text-secondary)" }}>
+            Claimed by {item.claimedBy || "Dev"}. Slot: {item.claimedSlot || "Today 4:00 PM"}.
           </p>
-
           <button
             type="button"
             onClick={openWhatsAppClaimer}
             style={{
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "8px",
               background: "#25D366",
               color: "#fff",
@@ -1202,27 +1036,11 @@ export function DonationDetail({
             }}
           >
             <ChatBubbleLeftRightIcon width={16} height={16} />
-            <span>Chat with {item.claimedBy || "Claimer"} on WhatsApp</span>
+            <span>Chat with {item.claimedBy || "claimer"} on WhatsApp</span>
           </button>
-        </div>
+        </>
       ) : isClosed ? (
-        <div
-          style={{
-            padding: 12,
-            borderRadius: "10px",
-            background: "#edf7ee",
-            border: "1px solid #287d3c",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: "13px",
-            color: "#287d3c",
-            fontWeight: 600,
-          }}
-        >
-          <CheckCircleIcon width={18} height={18} />
-          <span>Completed: Food was picked up and rescued!</span>
-        </div>
+        <p style={{ margin: 0, fontSize: "14px", color: "var(--color-text-secondary)" }}>Picked up.</p>
       ) : (
         <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-sm)" }}>
           Active listing · {item.interested === 0 ? "No claims yet" : `${item.interested} neighbors interested`}
@@ -1281,7 +1099,8 @@ export function NotificationDetail({
             width: 32,
             height: 32,
             borderRadius: "9999px",
-            background: "var(--color-background-brand-subtle, #ffedec)",
+            background: "var(--color-background-muted, #f2f2f6)",
+            color: "var(--color-text-secondary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1290,11 +1109,11 @@ export function NotificationDetail({
         >
           {isDonation ? (
             <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
-              <BagNavIcon selected />
+              <BagNavIcon selected={false} />
             </span>
           ) : (
             <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
-              <StoreNavIcon selected />
+              <StoreNavIcon selected={false} />
             </span>
           )}
         </div>

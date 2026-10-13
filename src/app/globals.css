@@ -25,3 +25,16 @@ a {
   color: var(--color-text-brand);
   text-decoration: none;
 }
+
+/* Outline button & icon-button: use color/border/subtle on Default and Hover */
+.evolve-button[data-variant="Outline"][data-state="Default"],
+.evolve-button[data-variant="Outline"][data-state="Hover"],
+.evolve-button[data-variant="Outline"][data-state="Default"]:hover:not(:disabled):not([aria-pressed="true"]),
+.evolve-icon-button[data-variant="Outline"][data-state="Default"],
+.evolve-icon-button[data-variant="Outline"][data-state="Hover"],
+.evolve-icon-button[data-variant="Outline"][data-state="Default"]:hover:not(:disabled) {
+  --button-border-color: var(--color-border-subtle) !important;
+  --button-hover-border-color: var(--color-border-subtle) !important;
+  border-color: var(--color-border-subtle) !important;
+}
+

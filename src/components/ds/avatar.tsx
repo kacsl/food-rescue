@@ -6,6 +6,7 @@ export interface KariAvatarProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   state?: AvatarState;
   disabled?: boolean;
   className?: string;
+  size?: number;
 }
 
 /**
@@ -28,12 +29,18 @@ export function KariAvatar({
   state,
   disabled = false,
   className,
+  size,
   style,
   onClick,
   ...props
 }: KariAvatarProps) {
   const [internalHover, setInternalHover] = useState(false);
   const [internalPressed, setInternalPressed] = useState(false);
+
+  const avatarSize = size ?? 50;
+  const scale = avatarSize / 50;
+  const svgWidth = Math.round(27 * scale);
+  const svgHeight = Math.round(24 * scale);
 
   const isDisabled = disabled || state === "Disabled";
   const isHovered = !isDisabled && (state === "Hover" || internalHover);
@@ -57,10 +64,10 @@ export function KariAvatar({
       onClick={isDisabled ? undefined : onClick}
       style={{
         position: "relative",
-        width: 50,
-        height: 50,
-        minWidth: 50,
-        minHeight: 50,
+        width: avatarSize,
+        height: avatarSize,
+        minWidth: avatarSize,
+        minHeight: avatarSize,
         borderRadius: "9999px",
         padding: 0,
         border: "1px solid var(--color-border-subtle, #e6e7ed)",
@@ -94,10 +101,10 @@ export function KariAvatar({
         />
       )}
 
-      {/* Kari Mascot Graphic (Vector 27px × 24px) */}
+      {/* Kari Mascot Graphic (Vector scaled) */}
       <svg
-        width="27"
-        height="24"
+        width={svgWidth}
+        height={svgHeight}
         viewBox="0 0 27 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

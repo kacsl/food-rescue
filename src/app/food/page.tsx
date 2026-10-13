@@ -1,8 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Chip } from "valere-DS";
 import { KariAvatar } from "@/components/ds/avatar";
+import {
+  AllergiesPage,
+  INITIAL_PROFILE,
+  ProfileDataPage,
+  ProfileMenu,
+  type ProfileRecord,
+} from "@/components/food/profile";
 import { ListingCard, NearbyCard, type Donation, type NearbyFood } from "@/components/food/cards";
 import { PhoneFrame, type FoodScreen } from "@/components/food/phone-frame";
 import {
@@ -216,6 +223,8 @@ export default function FoodPage() {
   const [pendingVerificationAction, setPendingVerificationAction] = useState<(() => void) | null>(null);
 
   const [notice, setNotice] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ProfileRecord>(INITIAL_PROFILE);
+  const [profileView, setProfileView] = useState<null | "menu" | "data" | "allergies">(null);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -223,10 +232,13 @@ export default function FoodPage() {
   );
 
   const nearbyVisible = useMemo(() => {
-    return query.trim()
+    const searched = query.trim()
       ? nearbyList.filter((item) => matches(item.title + " " + item.area + " " + item.host, query))
       : nearbyList;
-  }, [nearbyList, query]);
+    return profile.hideMatchingAllergies
+      ? searched.filter((item) => !item.allergens.some((allergen) => profile.allergies.includes(allergen)))
+      : searched;
+  }, [nearbyList, query, profile.allergies, profile.hideMatchingAllergies]);
 
   const donationVisible = useMemo(() => {
     return donations.filter((item) => {
@@ -247,6 +259,7 @@ export default function FoodPage() {
 
   function switchScreen(next: FoodScreen) {
     setScreen(next);
+    setProfileView(null);
     setQuery("");
     setSearchOpen(false);
     setNearbyItem(null);
@@ -436,12 +449,6 @@ export default function FoodPage() {
     setNotice(`"${data.title}" is now live for neighbor pickup!`);
   }
 
-  const donationCountLabel =
-    tab === "closed" ? "closed donations" : tab === "all" ? "donations" : "open donations";
-  const donationCount = String(
-    donations.filter((item) => (tab === "all" ? true : item.status === tab)).length,
-  ).padStart(2, "0");
-
   // Dynamic Modals & Sheets Overlay
   const overlay = claimHandoff ? (
     <ClaimHandoffSheet
@@ -516,11 +523,33 @@ export default function FoodPage() {
       screen={screen}
       onScreen={switchScreen}
       notificationCount={unreadCount}
-      showCreate={screen === "donations"}
+      showCreate={screen === "donations" && donationVisible.length > 0 && !profileView}
       onCreate={() => setComposing(true)}
+      hideNav={Boolean(profileView)}
+      hideBlobs={Boolean(profileView)}
       overlay={overlay}
     >
-      {screen === "nearby" ? (
+      {profileView === "menu" ? (
+        <ProfileMenu
+          profile={profile}
+          onClose={() => setProfileView(null)}
+          onOpenData={() => setProfileView("data")}
+          onOpenAllergies={() => setProfileView("allergies")}
+          onPhotoChange={(photo) => setProfile((current) => ({ ...current, photo }))}
+        />
+      ) : profileView === "data" ? (
+        <ProfileDataPage
+          profile={profile}
+          onBack={() => setProfileView("menu")}
+          onSave={(next) => setProfile((current) => ({ ...current, ...next }))}
+        />
+      ) : profileView === "allergies" ? (
+        <AllergiesPage
+          profile={profile}
+          onBack={() => setProfileView("menu")}
+          onSave={(next) => setProfile((current) => ({ ...current, ...next }))}
+        />
+      ) : screen === "nearby" ? (
         <NearbyView
           items={nearbyVisible}
           query={query}
@@ -529,18 +558,15 @@ export default function FoodPage() {
           onToggleSearch={toggleSearch}
           onQuery={setQuery}
           onOpen={setNearbyItem}
+          onOpenProfile={() => setProfileView("menu")}
+          displayName={profile.name}
         />
       ) : screen === "donations" ? (
         <DonationsView
           items={donationVisible}
-          countLabel={`${donationCount} ${donationCountLabel}`}
           tab={tab}
-          query={query}
-          searchOpen={searchOpen}
           notice={notice}
           onTab={setTab}
-          onToggleSearch={toggleSearch}
-          onQuery={setQuery}
           onOpen={setDonationItem}
           onCreate={() => setComposing(true)}
         />
@@ -549,13 +575,9 @@ export default function FoodPage() {
           items={notificationsVisible}
           filter={notifFilter}
           unreadCount={unreadCount}
-          query={query}
-          searchOpen={searchOpen}
           notice={notice}
           onFilter={setNotifFilter}
           onMarkAllRead={markAllNotificationsRead}
-          onToggleSearch={toggleSearch}
-          onQuery={setQuery}
           onOpen={(item) => {
             markNotificationRead(item.id);
             setSelectedNotif(item);
@@ -574,6 +596,8 @@ function NearbyView({
   onToggleSearch,
   onQuery,
   onOpen,
+  onOpenProfile,
+  displayName,
 }: {
   items: NearbyFood[];
   query: string;
@@ -582,13 +606,15 @@ function NearbyView({
   onToggleSearch: () => void;
   onQuery: (value: string) => void;
   onOpen: (item: NearbyFood) => void;
+  onOpenProfile: () => void;
+  displayName: string;
 }) {
   return (
     <>
       <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>Hi, Kari</h1>
-          <KariAvatar aria-label="Kari profile" style={{ width: 36, height: 36 }} />
+          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>Hi, {displayName}</h1>
+          <KariAvatar aria-label="Open profile" onClick={onOpenProfile} style={{ width: 36, height: 36 }} />
         </div>
         <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
           Enjoy fresh food before it goes to the bin.
@@ -622,58 +648,36 @@ function NearbyView({
 
 function DonationsView({
   items,
-  countLabel,
   tab,
-  query,
-  searchOpen,
   notice,
   onTab,
-  onToggleSearch,
-  onQuery,
   onOpen,
   onCreate,
 }: {
   items: Donation[];
-  countLabel: string;
   tab: DonationTab;
-  query: string;
-  searchOpen: boolean;
   notice: string | null;
   onTab: (tab: DonationTab) => void;
-  onToggleSearch: () => void;
-  onQuery: (value: string) => void;
   onOpen: (item: Donation) => void;
   onCreate?: () => void;
 }) {
+  const emptyCopy =
+    tab === "open" ? "No open donations yet." : tab === "closed" ? "No closed donations yet." : "No donations yet.";
+
   return (
     <>
       <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>My donations</h1>
-          <KariAvatar aria-label="Kari profile" style={{ width: 36, height: 36 }} />
-        </div>
-        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
-          Manage your shared food and coordinate neighbor pickups.
-        </p>
+        <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>My donations</h1>
       </header>
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
         <DonationTabs value={tab} onChange={onTab} />
-        <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              {query.trim() ? `${String(items.length).padStart(2, "0")} matches` : countLabel}
-            </h2>
-            <SearchField open={searchOpen} onToggle={onToggleSearch} />
-          </div>
-          <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
-        </div>
 
         {notice ? <Notice>{notice}</Notice> : null}
 
         {items.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", paddingBlock: 24 }}>
-            <Empty>No {tab} donations yet.</Empty>
+            <Empty>{emptyCopy}</Empty>
             {onCreate ? (
               <button
                 type="button"
@@ -689,7 +693,7 @@ function DonationsView({
                   cursor: "pointer",
                 }}
               >
-                + Share surplus food
+                Share surplus food
               </button>
             ) : null}
           </div>
@@ -705,39 +709,24 @@ function NotificationsView({
   items,
   filter,
   unreadCount,
-  query,
-  searchOpen,
   notice,
   onFilter,
   onMarkAllRead,
-  onToggleSearch,
-  onQuery,
   onOpen,
 }: {
   items: FoodNotification[];
   filter: "all" | "unread";
   unreadCount: number;
-  query: string;
-  searchOpen: boolean;
   notice: string | null;
   onFilter: (filter: "all" | "unread") => void;
   onMarkAllRead: () => void;
-  onToggleSearch: () => void;
-  onQuery: (value: string) => void;
   onOpen: (item: FoodNotification) => void;
 }) {
   return (
     <>
       <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>Notifications</h1>
-          <KariAvatar aria-label="Kari profile" style={{ width: 36, height: 36 }} />
-        </div>
-        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
-          Stay updated on reservations and pickups.
-        </p>
+        <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>Notifications</h1>
 
-        {/* Filter and Mark Read actions */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
           <div role="tablist" aria-label="Notification filter" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span role="tab" aria-selected={filter === "all"} onClick={() => onFilter("all")}>
@@ -758,7 +747,7 @@ function NotificationsView({
               style={{
                 border: "none",
                 background: "transparent",
-                color: "var(--color-action-primary, #dc2b10)",
+                color: "var(--color-text-secondary)",
                 fontSize: "var(--font-size-body-sm)",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -773,24 +762,10 @@ function NotificationsView({
       </header>
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              {query.trim()
-                ? `${String(items.length).padStart(2, "0")} matches`
-                : filter === "unread"
-                ? `${String(items.length).padStart(2, "0")} unread`
-                : `${String(items.length).padStart(2, "0")} updates`}
-            </h2>
-            <SearchField open={searchOpen} onToggle={onToggleSearch} />
-          </div>
-          <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
-        </div>
-
         {notice ? <Notice>{notice}</Notice> : null}
 
         {items.length === 0 ? (
-          <Empty>{filter === "unread" ? "You're all caught up! No unread notifications." : "No notifications found."}</Empty>
+          <Empty>{filter === "unread" ? "No unread notifications." : "No notifications."}</Empty>
         ) : (
           items.map((item) => {
             const isDonation = item.category === "donation";
@@ -809,10 +784,8 @@ function NotificationsView({
                   font: "inherit",
                   color: "inherit",
                   cursor: "pointer",
-                  background: item.read ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.45)",
-                  border: item.read
-                    ? "1px solid var(--color-border-subtle, #e6e7ed)"
-                    : "1.5px solid var(--color-action-primary, #dc2b10)",
+                  background: "rgba(255, 255, 255, 0.45)",
+                  border: "1px solid var(--color-border-subtle, #e6e7ed)",
                   borderRadius: "var(--radius-card, 16px)",
                   display: "flex",
                   flexDirection: "column",
@@ -828,12 +801,8 @@ function NotificationsView({
                         width: 32,
                         height: 32,
                         borderRadius: "9999px",
-                        background: item.read
-                          ? "var(--color-background-muted, #f2f2f6)"
-                          : "var(--color-background-brand-subtle, #ffedec)",
-                        color: item.read
-                          ? "var(--color-text-secondary, #5c5c63)"
-                          : "var(--color-action-primary, #dc2b10)",
+                        background: "var(--color-background-muted, #f2f2f6)",
+                        color: "var(--color-text-secondary, #5c5c63)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -842,11 +811,11 @@ function NotificationsView({
                     >
                       {isDonation ? (
                         <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
-                          <BagNavIcon selected={!item.read} />
+                          <BagNavIcon selected={false} />
                         </span>
                       ) : (
                         <span style={{ transform: "scale(0.75)", display: "inline-flex" }}>
-                          <StoreNavIcon selected={!item.read} />
+                          <StoreNavIcon selected={false} />
                         </span>
                       )}
                     </div>
