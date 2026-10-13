@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Button } from "valere-DS";
+import { Button } from "@/components/ds/button";
 
 function SunIcon() {
   return (

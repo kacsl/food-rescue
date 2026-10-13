@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, IconButton } from "valere-DS";
+import { Button, IconButton } from "@/components/ds/button";
 import { Checkbox } from "@/components/ds/checkbox";
 import { Chip } from "@/components/ds/chip";
 import { EditableAvatar } from "@/components/ds/editable-avatar";
@@ -54,12 +54,14 @@ export function ProfileMenu({
   onOpenData,
   onOpenAllergies,
   onPhotoChange,
+  onLogout,
 }: {
   profile: ProfileRecord;
   onClose: () => void;
   onOpenData: () => void;
   onOpenAllergies: () => void;
   onPhotoChange: (photo: string) => void;
+  onLogout: () => void;
 }) {
   return (
     <div
@@ -171,6 +173,13 @@ export function ProfileMenu({
           <SettingsRow icon={<UserCircleIcon width={22} height={22} strokeWidth={1.75} />} label="Profile data" onClick={onOpenData} />
           <SettingsRow icon={<ShieldExclamationIcon width={22} height={22} strokeWidth={1.75} />} label="Allergies and preferences" onClick={onOpenAllergies} />
         </div>
+        <Button
+          variant="Link secondary"
+          size="SM"
+          label="Log out"
+          onClick={onLogout}
+          style={{ alignSelf: "flex-start" }}
+        />
       </section>
     </div>
   );
@@ -657,7 +666,7 @@ function Field({
           borderRadius: "var(--radius-control, 8px)",
           border:
             focused && !disabled
-              ? "1px solid var(--color-border-focus-secondary)"
+              ? "var(--border-emphasis, 1.5px) solid var(--color-border-focus)"
               : "1px solid var(--color-border-subtle)",
           outline: "none",
           background: disabled ? "var(--color-background-subtle, #f8f9fc)" : "var(--color-background-surface, #ffffff)",

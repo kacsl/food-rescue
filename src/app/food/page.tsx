@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Chip } from "valere-DS";
 import { KariAvatar } from "@/components/ds/avatar";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/food/profile";
 import { ListingCard, NearbyCard, type Donation, type NearbyFood } from "@/components/food/cards";
 import { PhoneFrame, type FoodScreen } from "@/components/food/phone-frame";
+import { SplashScreen } from "@/components/food/splash-screen";
 import {
   DonationDetail,
   DonationTabs,
@@ -25,6 +26,14 @@ import {
   type FoodNotification,
 } from "@/components/food/panels";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
+import { LoggedOutHome, LoginScreen, SignUpScreen } from "@/components/food/auth-screens";
+import {
+  clearFoodSession,
+  GOOGLE_PROTOTYPE_SESSION,
+  readFoodSession,
+  writeFoodSession,
+  type FoodSession,
+} from "@/components/food/auth-session";
 
 const INITIAL_NEARBY: NearbyFood[] = [
   {
@@ -199,6 +208,7 @@ function matches(title: string, query: string) {
 }
 
 export default function FoodPage() {
+  const [showSplash, setShowSplash] = useState(true);
   const [screen, setScreen] = useState<FoodScreen>("nearby");
   const [tab, setTab] = useState<DonationTab>("open");
   const [notifFilter, setNotifFilter] = useState<"all" | "unread">("all");
@@ -225,6 +235,15 @@ export default function FoodPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileRecord>(INITIAL_PROFILE);
   const [profileView, setProfileView] = useState<null | "menu" | "data" | "allergies">(null);
+  const [session, setSession] = useState<FoodSession | null>(null);
+  const [authView, setAuthView] = useState<"home" | "login" | "signup">("home");
+
+  useEffect(() => {
+    const stored = readFoodSession();
+    if (!stored) return;
+    setSession(stored);
+    setProfile((current) => ({ ...current, name: stored.name, email: stored.email, password: stored.password }));
+  }, []);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -386,18 +405,22 @@ export default function FoodPage() {
   // Create Listing Handler (Supply side)
   function handlePublishDonation(data: {
     title: string;
+    image?: string;
     foodAge: string;
     preparedDaysAgo: number;
     keptRefrigerated: boolean;
+    packagingType?: "packaged" | "unpackaged";
+    expirationInfo?: string;
     allergens: string[];
     pickupType: "immediate" | "scheduled";
     slotLabel: string;
   }) {
     const newId = `donation-${Date.now()}`;
+    const listingImage = data.image || "/food/eggs.png";
     const newDonation: Donation = {
       id: newId,
       title: data.title,
-      image: "/food/eggs.png",
+      image: listingImage,
       status: "open",
       interested: 0,
       claimStatus: "unclaimed",
@@ -414,13 +437,15 @@ export default function FoodPage() {
       host: "Karina Somers",
       hostPhone: "+55 11 98877-6655",
       hostVerified: true,
-      image: "/food/eggs.png",
+      image: listingImage,
       badge: data.pickupType === "immediate" ? "Available now" : "Needs scheduling",
       timeLeft: data.pickupType === "immediate" ? "60m left" : "Available today",
       minutesLeft: 60,
       foodAge: data.foodAge,
       preparedDaysAgo: data.preparedDaysAgo,
       keptRefrigerated: data.keptRefrigerated,
+      packagingType: data.packagingType,
+      expirationInfo: data.expirationInfo,
       allergens: data.allergens,
       address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
       pickupType: data.pickupType,
@@ -450,7 +475,12 @@ export default function FoodPage() {
   }
 
   // Dynamic Modals & Sheets Overlay
-  const overlay = claimHandoff ? (
+  const modalOverlay = showPhoneModal ? (
+    <PhoneVerificationModal
+      onClose={() => setShowPhoneModal(false)}
+      onVerified={onPhoneVerified}
+    />
+  ) : claimHandoff ? (
     <ClaimHandoffSheet
       food={claimHandoff.food}
       selectedSlot={claimHandoff.slot}
@@ -490,18 +520,6 @@ export default function FoodPage() {
       }}
       onMarkPickedUp={() => handleMarkPickedUp(donationItem.id, donationItem.title)}
     />
-  ) : composing ? (
-    <NewDonationSheet
-      onClose={() => setComposing(false)}
-      isUserVerified={isUserVerified}
-      onPublish={handlePublishDonation}
-      onNeedsVerification={() => triggerPhoneVerification(() => {})}
-    />
-  ) : showPhoneModal ? (
-    <PhoneVerificationModal
-      onClose={() => setShowPhoneModal(false)}
-      onVerified={onPhoneVerified}
-    />
   ) : selectedNotif ? (
     <NotificationDetail
       item={selectedNotif}
@@ -518,24 +536,79 @@ export default function FoodPage() {
     />
   ) : null;
 
+  const loggedIn = Boolean(session);
+
+  function enterSession(next: FoodSession) {
+    writeFoodSession(next);
+    setSession(next);
+    setProfile({ ...INITIAL_PROFILE, name: next.name, email: next.email, password: next.password });
+    setAuthView("home");
+    setScreen("nearby");
+    setProfileView(null);
+  }
+
+  function logout() {
+    clearFoodSession();
+    setSession(null);
+    setProfile(INITIAL_PROFILE);
+    setProfileView(null);
+    setAuthView("home");
+    setScreen("nearby");
+    setNearbyItem(null);
+    setDonationItem(null);
+    setSelectedNotif(null);
+    setComposing(false);
+    setClaimHandoff(null);
+    setNotice(null);
+  }
+
+  const overlay = (
+    <>
+      {loggedIn ? modalOverlay : null}
+      {showSplash ? <SplashScreen onComplete={() => setShowSplash(false)} /> : null}
+    </>
+  );
+
   return (
     <PhoneFrame
       screen={screen}
       onScreen={switchScreen}
       notificationCount={unreadCount}
-      showCreate={screen === "donations" && donationVisible.length > 0 && !profileView}
+      showCreate={loggedIn && screen === "donations" && donationVisible.length > 0 && !profileView && !composing}
       onCreate={() => setComposing(true)}
-      hideNav={Boolean(profileView)}
-      hideBlobs={Boolean(profileView)}
+      hideNav={!loggedIn || Boolean(profileView || composing)}
+      hideBlobs={loggedIn && Boolean(profileView || composing)}
+      gateBlobs={!loggedIn}
+      contentKey={loggedIn ? screen : authView}
       overlay={overlay}
     >
-      {profileView === "menu" ? (
+      {!loggedIn ? (
+        authView === "login" ? (
+          <LoginScreen onBack={() => setAuthView("home")} onSwitch={() => setAuthView("signup")} onSuccess={enterSession} />
+        ) : authView === "signup" ? (
+          <SignUpScreen onBack={() => setAuthView("home")} onSwitch={() => setAuthView("login")} onSuccess={enterSession} />
+        ) : (
+          <LoggedOutHome
+            onCreateAccount={() => setAuthView("signup")}
+            onLogIn={() => setAuthView("login")}
+            onGoogle={() => enterSession(GOOGLE_PROTOTYPE_SESSION)}
+          />
+        )
+      ) : composing ? (
+        <NewDonationSheet
+          onClose={() => setComposing(false)}
+          isUserVerified={isUserVerified}
+          onPublish={handlePublishDonation}
+          onNeedsVerification={() => triggerPhoneVerification(() => {})}
+        />
+      ) : profileView === "menu" ? (
         <ProfileMenu
           profile={profile}
           onClose={() => setProfileView(null)}
           onOpenData={() => setProfileView("data")}
           onOpenAllergies={() => setProfileView("allergies")}
           onPhotoChange={(photo) => setProfile((current) => ({ ...current, photo }))}
+          onLogout={logout}
         />
       ) : profileView === "data" ? (
         <ProfileDataPage
@@ -870,11 +943,14 @@ function NotificationsView({
 }
 
 function SearchSlot(props: { open: boolean; query: string; onToggle: () => void; onQuery: (value: string) => void }) {
+  const [focused, setFocused] = useState(true);
   if (!props.open) return null;
   return (
     <input
       autoFocus
       value={props.query}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       onChange={(event) => props.onQuery(event.target.value)}
       onKeyDown={(event) => {
         if (event.key === "Escape") props.onToggle();
@@ -887,7 +963,9 @@ function SearchSlot(props: { open: boolean; query: string; onToggle: () => void;
         marginTop: 16,
         paddingInline: 16,
         borderRadius: "var(--radius-control)",
-        border: "1px solid var(--color-border-subtle)",
+        border: focused
+          ? "var(--border-emphasis, 1.5px) solid var(--color-border-focus)"
+          : "1px solid var(--color-border-subtle)",
         background: "rgba(255, 255, 255, 0.72)",
         color: "var(--color-text-primary)",
         font: "inherit",

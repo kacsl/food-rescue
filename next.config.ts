@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   // valere-DS ships TypeScript source, so Next must compile it.
   transpilePackages: ["valere-DS"],
   outputFileTracingRoot: import.meta.dirname,
+  webpack: (config) => {
+    config.snapshot = {
+      ...config.snapshot,
+      managedPaths: [/^(.+?[\\/]node_modules[\\/](?!valere-DS))/],
+    };
+    return config;
+  },
 };
 
 // The dev/build scripts pass `--webpack`. Turbopack resolves the PostCSS config

@@ -1,9 +1,10 @@
-import { Button, IconButton, type ButtonSize, type ButtonVariant } from "valere-DS";
+import { Button, IconButton, type ButtonSize, type ButtonState, type ButtonVariant } from "@/components/ds/button";
 import { SectionHeader } from "./section-header";
 
-const VARIANTS: ButtonVariant[] = ["Primary", "Secondary", "Outline", "Ghost", "Link", "Error"];
+const VARIANTS: ButtonVariant[] = ["Primary", "Secondary", "Outline", "Ghost", "Link", "Link secondary", "Error"];
 const ICON_BUTTON_VARIANTS = ["Primary", "Secondary", "Outline", "Ghost", "Error"] as const;
 const SIZES: ButtonSize[] = ["XS", "SM", "MD", "LG", "XL"];
+const STATES: ButtonState[] = ["Default", "Hover", "Focus", "Active", "Disabled", "Invalid"];
 
 function PlusIcon() {
   return (
@@ -68,6 +69,25 @@ export function ButtonShowcase() {
             <Button variant="Primary" size="MD" state="Disabled" label="Disabled state" disabled />
             <Button variant="Primary" size="MD" state="Default" label="With Leading Icon" leadingIcon leadingIconSwap={<PlusIcon />} />
             <Button variant="Secondary" size="MD" state="Default" label="With Trailing Icon" trailingIcon trailingIconSwap={<CheckIcon />} />
+          </div>
+        </div>
+
+        {/* Link Secondary States */}
+        <div>
+          <h4 style={{ margin: "0 0 var(--space-stack-sm) 0", fontSize: "var(--font-size-body-sm)", color: "var(--color-text-secondary)" }}>
+            Link Secondary States
+          </h4>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "var(--space-inline-md)" }}>
+            {STATES.map((st) => (
+              <Button
+                key={st}
+                variant="Link secondary"
+                size="MD"
+                state={st}
+                disabled={st === "Disabled"}
+                label={st}
+              />
+            ))}
           </div>
         </div>
 

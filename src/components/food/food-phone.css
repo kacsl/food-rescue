@@ -122,6 +122,22 @@
   top: -133px;
 }
 
+/* Logged-out home (Figma 45:5125). Ellipse boxes include the 100px blur pad in the SVG. */
+.food-phone--gate .food-blob--bottom {
+  left: -184px;
+  top: 3px;
+}
+
+.food-phone--gate .food-blob--top {
+  left: -30px;
+  top: 317px;
+}
+
+.food-auth-field input[aria-invalid="true"],
+.food-auth-field input[aria-invalid="true"]:focus {
+  border: var(--border-emphasis, 1.5px) solid var(--color-status-error-border) !important;
+}
+
 /* =========================================================================
    SOFT PAGE-TO-PAGE ANIMATIONS
    ========================================================================= */
@@ -352,9 +368,120 @@
   color: var(--color-text-primary, #303036) !important;
 }
 
-.food-phone input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus {
+.food-phone input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.food-phone textarea:focus {
   outline: none;
-  border-color: var(--color-border-focus-secondary, #2d7354) !important;
+  border: var(--border-emphasis, 1.5px) solid var(--color-border-focus, #be240c) !important;
 }
+
+/* =========================================================================
+   SPLASH SCREEN (Figma 44:4746)
+   Soft logo fade and Figma background blur ellipses
+   ========================================================================= */
+
+.food-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  width: 393px;
+  height: 852px;
+  background: var(--color-background-canvas, #ffffff);
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  opacity: 1;
+  transform: scale(1);
+  transition-property: opacity, transform, filter;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.food-splash--fading-out {
+  opacity: 0;
+  transform: scale(1.018);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Figma BR Background Blobs (44:4747 & 44:4748) */
+.food-splash__blob {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.food-splash__blob--top-left {
+  left: -147px;
+  top: -73px;
+}
+
+.food-splash__blob--bottom-right {
+  left: -30px;
+  top: 317px;
+}
+
+/* Status Bar */
+.food-splash__status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 393px;
+  z-index: 4;
+}
+
+/* Centered Logo / Portrait (Figma 44:4870) */
+.food-splash__logo-portrait {
+  position: absolute;
+  left: calc(50% - 0.43px);
+  top: calc(50% + 0.5px);
+  width: 308.148px;
+  height: 205px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20.866px;
+  z-index: 3;
+  animation: splashLogoFade 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes splashLogoFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 6px));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.food-splash__icon-wrap {
+  position: relative;
+  width: 160.872px;
+  height: 143.27px;
+  flex-shrink: 0;
+}
+
+.food-splash__icon-svg {
+  display: block;
+  width: 160.872px;
+  height: 143.27px;
+  overflow: visible;
+}
+
+.food-splash__wordmark-wrap {
+  position: relative;
+  width: 308.148px;
+  height: 40.863px;
+  flex-shrink: 0;
+}
+
+.food-splash__wordmark-svg {
+  display: block;
+  width: 308.148px;
+  height: 40.863px;
+  overflow: visible;
+}
+
 
 

@@ -14,6 +14,9 @@ type PhoneFrameProps = {
   onCreate?: () => void;
   hideNav?: boolean;
   hideBlobs?: boolean;
+  /** Logged-out screens use the home-frame blob positions. */
+  gateBlobs?: boolean;
+  contentKey?: string;
   overlay?: ReactNode;
   children: ReactNode;
 };
@@ -26,13 +29,15 @@ export function PhoneFrame({
   onCreate,
   hideNav = false,
   hideBlobs = false,
+  gateBlobs = false,
+  contentKey,
   overlay,
   children,
 }: PhoneFrameProps) {
   return (
     <div className="food-stage">
       <div className="food-scaler">
-        <div className="food-phone">
+        <div className={gateBlobs ? "food-phone food-phone--gate" : "food-phone"}>
           {!hideBlobs && (
             <>
               <img className="food-blob food-blob--bottom" src="/food/blob-bottom.svg" width={595} height={583.19} alt="" />
@@ -48,7 +53,7 @@ export function PhoneFrame({
             }}
           >
             <StatusBar />
-            <div key={screen} className="food-page-view">
+            <div key={contentKey ?? screen} className="food-page-view">
               {children}
             </div>
           </div>

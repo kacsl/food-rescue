@@ -7,6 +7,9 @@ import {
   TextArea,
   TextField,
 } from "valere-DS";
+import { Calendar, Day, MeridiemToggle, TimeStepper } from "@/components/ds/calendar";
+import { DatePicker } from "@/components/ds/date-picker";
+import { TimeList, TimePicker } from "@/components/ds/time-picker";
 import { SectionHeader } from "./section-header";
 
 export function FormShowcase() {
@@ -33,6 +36,7 @@ export function FormShowcase() {
             }}
           >
             <TextField label="Default state" value="" helperText="Standard input field" showHelper />
+            <TextField label="Focus state" value="kari.food@example.com" state="Focus" helperText="Focused input field" showHelper />
             <TextField label="Filled state" value="kari.food@example.com" state="Filled" showHelper />
             <TextField label="Required with error" value="invalid-email" state="Error" required helperText="Please enter a valid email address" showHelper />
             <TextField label="Disabled state" value="Read-only account" state="Disabled" showHelper helperText="Cannot be changed" />
@@ -110,6 +114,46 @@ export function FormShowcase() {
                 <QuantityInput state="Default" value="4" />
                 <QuantityInput state="Disabled" value="1" />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* C31 — Calendar (Figma 90:70) */}
+        <div>
+          <h4 style={{ margin: "0 0 var(--space-stack-sm) 0", fontSize: "var(--font-size-body-sm)", color: "var(--color-text-secondary)" }}>
+            Calendar &amp; Day States (Figma 90:70)
+          </h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-md)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-sm)", alignItems: "center" }}>
+              <Day state="Default" day={15} />
+              <Day state="Hover" day={15} />
+              <Day state="Selected" day={15} />
+              <Day state="Today" day={15} />
+              <Day state="Range start" day={15} />
+              <Day state="Range middle" day={15} />
+              <Day state="Range end" day={15} />
+              <Day state="Disabled" day={15} />
+              <Day state="Outside" day={15} />
+              <TimeStepper value="09" unit="hour" />
+              <MeridiemToggle active="AM" />
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-lg)", alignItems: "flex-start" }}>
+              <Calendar months={1} showPresets={false} showTime={false} showFooter />
+              <Calendar months={1} showPresets={false} showTime showFooter timeFormat="12h" />
+            </div>
+          </div>
+        </div>
+
+        {/* C32 Date Picker & C33 Time Picker (Figma 90:71 & 1169:159) */}
+        <div>
+          <h4 style={{ margin: "0 0 var(--space-stack-sm) 0", fontSize: "var(--font-size-body-sm)", color: "var(--color-text-secondary)" }}>
+            Date Picker &amp; Time Picker (Figma 90:71 &amp; 1169:159)
+          </h4>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-lg)", alignItems: "flex-start" }}>
+            <DatePicker label="Date" state="Selected" value="2026-08-15" showHelper helperText="Helper text" />
+            <TimePicker label="Time" state="Selected" value="09:30" showHelper helperText="Helper text" />
+            <div style={{ width: 280 }}>
+              <TimeList selectedValue="09:30" hoveredValue="09:45" />
             </div>
           </div>
         </div>

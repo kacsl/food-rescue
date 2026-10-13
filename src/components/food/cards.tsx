@@ -39,6 +39,8 @@ export type NearbyFood = {
   foodAge: string; // "Cooked today" | "Prepared 1 day ago"
   preparedDaysAgo: number;
   keptRefrigerated: boolean;
+  packagingType?: "packaged" | "unpackaged";
+  expirationInfo?: string;
   allergens: string[];
   address: string; // Unlocked after claim
   pickupType: "immediate" | "scheduled";

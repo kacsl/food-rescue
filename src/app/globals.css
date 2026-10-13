@@ -38,3 +38,10 @@ a {
   border-color: var(--color-border-subtle) !important;
 }
 
+/* Input fields: focus state uses color/border/focus on the stroke with 1.5px */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+textarea:focus {
+  outline: none;
+  border: var(--border-emphasis, 1.5px) solid var(--color-border-focus) !important;
+}
+
