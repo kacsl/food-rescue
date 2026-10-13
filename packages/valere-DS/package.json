@@ -1,0 +1,46 @@
+{
+  "name": "valere-DS",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evolve 2.0 design system — Figma tokens and published UI components.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shiarauzo/valere-DS.git"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./styles.css": "./styles/evolve.css"
+  },
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "lucide-react": "1.52.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "3.3.1",
+    "@tailwindcss/postcss": "4.1.11",
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.2",
+    "@types/react-dom": "19.1.2",
+    "eslint": "9.26.0",
+    "eslint-config-next": "15.5.4",
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "tailwindcss": "4.1.11",
+    "typescript": "5.8.3"
+  }
+}
