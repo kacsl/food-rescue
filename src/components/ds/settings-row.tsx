@@ -27,7 +27,7 @@ export function SettingsRow({ icon, label, onClick }: SettingsRowProps) {
         marginInline: -10,
         boxSizing: "content-box",
         border: "none",
-        borderRadius: "var(--radius-control, 12px)",
+        borderRadius: 0,
         borderBottom: "1px solid var(--color-border-subtle, #e6e7ed)",
         background: "transparent",
         color: "var(--color-text-primary, #303036)",

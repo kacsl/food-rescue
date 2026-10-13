@@ -42,9 +42,11 @@ export function Chip({
         background:
           disabled
             ? "var(--color-background-subtle)"
-            : on || state === "Hover"
-              ? "var(--color-background-brand-subtle)"
-              : "var(--color-background-surface)",
+            : on
+              ? "var(--color-background-canvas)"
+              : state === "Hover"
+                ? "var(--color-background-brand-subtle)"
+                : "var(--color-background-surface)",
         color: disabled
           ? "var(--color-text-disabled)"
           : on

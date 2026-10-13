@@ -7,12 +7,14 @@ import { SettingsRow } from "@/components/ds/settings-row";
 import { Stat } from "@/components/ds/stat";
 import { Toast } from "@/components/ds/toast";
 import {
-  CheckIcon,
   ChevronLeftIcon,
+  PencilIcon,
   ShieldCheckIcon,
+  ShieldExclamationIcon,
   UserCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
 export type ProfileRecord = {
   name: string;
@@ -167,7 +169,7 @@ export function ProfileMenu({
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <SettingsRow icon={<UserCircleIcon width={22} height={22} strokeWidth={1.75} />} label="Profile data" onClick={onOpenData} />
-          <SettingsRow icon={<ShieldCheckIcon width={22} height={22} strokeWidth={1.75} />} label="Allergies and preferences" onClick={onOpenAllergies} />
+          <SettingsRow icon={<ShieldExclamationIcon width={22} height={22} strokeWidth={1.75} />} label="Allergies and preferences" onClick={onOpenAllergies} />
         </div>
       </section>
     </div>
@@ -183,34 +185,36 @@ export function ProfileDataPage({
   onBack: () => void;
   onSave: (next: Pick<ProfileRecord, "name" | "email" | "password">) => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   function save() {
     const nextName = name.trim();
     const nextEmail = email.trim();
     if (!nextName) {
       setError("Add your name.");
-      setSaved(false);
+      setShowToast(false);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
       setError("Enter a valid email.");
-      setSaved(false);
+      setShowToast(false);
       return;
     }
     if (password && password.length < 8) {
       setError("Password must be at least 8 characters.");
-      setSaved(false);
+      setShowToast(false);
       return;
     }
     setError("");
-    setSaved(true);
     onSave({ name: nextName, email: nextEmail, password: password || profile.password });
     setPassword("");
+    setIsEditing(false);
+    setShowToast(true);
   }
 
   return (
@@ -218,24 +222,101 @@ export function ProfileDataPage({
       style={{
         background: "var(--color-background-canvas, #ffffff)",
         minHeight: "100%",
+        flex: 1,
         display: "flex",
         flexDirection: "column",
       }}
     >
       <PageHeader title="Profile data" onBack={onBack} />
       <form
-        style={{ display: "flex", flexDirection: "column", gap: 16, padding: 24 }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          gap: "var(--space-stack-md, 16px)",
+          padding: "var(--space-inset-lg, 24px)",
+        }}
         onSubmit={(event) => {
           event.preventDefault();
-          save();
+          if (isEditing) {
+            save();
+          }
         }}
       >
-        <Field label="Name" value={name} onChange={setName} autoComplete="name" />
-        <Field label="Email" value={email} onChange={setEmail} type="email" autoComplete="email" />
-        <Field label="Password" value={password} onChange={setPassword} type="password" autoComplete="new-password" placeholder="New password" />
-        {error ? <p style={{ margin: 0, color: "var(--color-text-error, #9c1b12)", fontSize: "var(--font-size-body-sm)" }}>{error}</p> : null}
-        {saved ? <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-sm)" }}>Saved.</p> : null}
-        <Button variant="Primary" size="MD" label="Save" onClick={save} style={{ width: "100%" }} />
+        <Field
+          label="Name"
+          value={name}
+          onChange={(val) => {
+            setShowToast(false);
+            setName(val);
+          }}
+          autoComplete="name"
+          disabled={!isEditing}
+        />
+        <Field
+          label="Email"
+          value={email}
+          onChange={(val) => {
+            setShowToast(false);
+            setEmail(val);
+          }}
+          type="email"
+          autoComplete="email"
+          disabled={!isEditing}
+        />
+        <Field
+          label="Password"
+          value={isEditing ? password : "••••••••"}
+          onChange={(val) => {
+            setShowToast(false);
+            setPassword(val);
+          }}
+          type="password"
+          autoComplete="new-password"
+          placeholder="New password"
+          disabled={!isEditing}
+        />
+        {error ? (
+          <p style={{ margin: 0, color: "var(--color-text-error, #9c1b12)", fontSize: "var(--font-size-body-sm)" }}>
+            {error}
+          </p>
+        ) : null}
+
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
+          {showToast ? (
+            <Toast
+              tone="Success"
+              title="Edits successfully saved"
+              showBody={false}
+              showAction={false}
+              showClose
+              onClose={() => setShowToast(false)}
+            />
+          ) : null}
+          {isEditing ? (
+            <Button
+              variant="Primary"
+              size="MD"
+              label="Save"
+              onClick={save}
+              style={{ width: "100%" }}
+            />
+          ) : (
+            <Button
+              variant="Primary"
+              size="MD"
+              label="Edit"
+              leadingIcon
+              leadingIconSwap={<PencilIcon width={16} height={16} strokeWidth={2} aria-hidden="true" />}
+              onClick={() => {
+                setShowToast(false);
+                setError("");
+                setIsEditing(true);
+              }}
+              style={{ width: "100%" }}
+            />
+          )}
+        </div>
       </form>
     </div>
   );
@@ -299,6 +380,7 @@ export function AllergiesPage({
       style={{
         background: "var(--color-background-canvas, #ffffff)",
         minHeight: "100%",
+        flex: 1,
         display: "flex",
         flexDirection: "column",
       }}
@@ -326,43 +408,76 @@ export function AllergiesPage({
           >
             Allergies
           </h4>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-sm, 8px)" }}>
-            {ALLERGENS.map((allergen) => {
-              const active = allergen === "None" ? allergies.length === 0 : allergies.includes(allergen);
-              const chipKey = `allergen-${allergen}`;
-              const hovered = isEditing && hoveredChip === chipKey;
-              return (
-                <div
-                  key={allergen}
-                  onMouseEnter={() => isEditing && setHoveredChip(chipKey)}
-                  onMouseLeave={() => setHoveredChip((current) => (current === chipKey ? null : current))}
+          {isEditing ? (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-sm, 8px)" }}>
+                {ALLERGENS.map((allergen) => {
+                  const active = allergen === "None" ? allergies.length === 0 : allergies.includes(allergen);
+                  const chipKey = `allergen-${allergen}`;
+                  const hovered = hoveredChip === chipKey;
+                  return (
+                    <div
+                      key={allergen}
+                      onMouseEnter={() => setHoveredChip(chipKey)}
+                      onMouseLeave={() => setHoveredChip((current) => (current === chipKey ? null : current))}
+                    >
+                      <Chip
+                        label={allergen}
+                        selected={active ? "True" : "False"}
+                        state={hovered ? "Hover" : "Default"}
+                        showLeadingIcon={active}
+                        leadingIcon={
+                          active ? (
+                            <CheckCircleIcon
+                              width={16}
+                              height={16}
+                              style={{ color: "var(--color-icon-brand)" }}
+                              aria-hidden="true"
+                            />
+                          ) : undefined
+                        }
+                        onClick={() => toggleAllergen(allergen)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <Checkbox
+                selection={hideMatchingAllergies ? "Checked" : "Unchecked"}
+                state="Default"
+                size="MD"
+                label="Hide foods that contain my allergies"
+                showDescription={false}
+                onClick={() => {
+                  setShowToast(false);
+                  setHideMatchingAllergies((prev) => !prev);
+                }}
+              />
+            </>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-xs, 4px)" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "var(--font-size-body-base, 16px)",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                {allergies.length > 0 ? allergies.join(", ") : "None"}
+              </p>
+              {hideMatchingAllergies ? (
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "var(--font-size-body-base, 16px)",
+                    color: "var(--color-text-secondary)",
+                  }}
                 >
-                  <Chip
-                    label={allergen}
-                    selected={active ? "True" : "False"}
-                    state={!isEditing ? "Disabled" : hovered ? "Hover" : "Default"}
-                    showLeadingIcon={active}
-                    leadingIcon={
-                      active ? <CheckIcon width={14} height={14} strokeWidth={2.25} aria-hidden="true" /> : undefined
-                    }
-                    onClick={() => toggleAllergen(allergen)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <Checkbox
-            selection={hideMatchingAllergies ? "Checked" : "Unchecked"}
-            state={isEditing ? "Default" : "Disabled"}
-            size="MD"
-            label="Hide foods that contain my allergies"
-            showDescription={false}
-            onClick={() => {
-              if (!isEditing) return;
-              setShowToast(false);
-              setHideMatchingAllergies((prev) => !prev);
-            }}
-          />
+                  Hide foods that contain my allergies
+                </p>
+              ) : null}
+            </div>
+          )}
         </section>
 
         <section style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-sm, 8px)" }}>
@@ -378,43 +493,76 @@ export function AllergiesPage({
           >
             Preferences
           </h4>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-sm, 8px)" }}>
-            {PREFERENCES.map((preference) => {
-              const active = preferences.includes(preference);
-              const chipKey = `preference-${preference}`;
-              const hovered = isEditing && hoveredChip === chipKey;
-              return (
-                <div
-                  key={preference}
-                  onMouseEnter={() => isEditing && setHoveredChip(chipKey)}
-                  onMouseLeave={() => setHoveredChip((current) => (current === chipKey ? null : current))}
+          {isEditing ? (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-sm, 8px)" }}>
+                {PREFERENCES.map((preference) => {
+                  const active = preferences.includes(preference);
+                  const chipKey = `preference-${preference}`;
+                  const hovered = hoveredChip === chipKey;
+                  return (
+                    <div
+                      key={preference}
+                      onMouseEnter={() => setHoveredChip(chipKey)}
+                      onMouseLeave={() => setHoveredChip((current) => (current === chipKey ? null : current))}
+                    >
+                      <Chip
+                        label={preference}
+                        selected={active ? "True" : "False"}
+                        state={hovered ? "Hover" : "Default"}
+                        showLeadingIcon={active}
+                        leadingIcon={
+                          active ? (
+                            <CheckCircleIcon
+                              width={16}
+                              height={16}
+                              style={{ color: "var(--color-icon-brand)" }}
+                              aria-hidden="true"
+                            />
+                          ) : undefined
+                        }
+                        onClick={() => togglePreference(preference)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <Checkbox
+                selection={hideNonMatchingPreferences ? "Checked" : "Unchecked"}
+                state="Default"
+                size="MD"
+                label="Hide food that doesn't meet my preferences"
+                showDescription={false}
+                onClick={() => {
+                  setShowToast(false);
+                  setHideNonMatchingPreferences((prev) => !prev);
+                }}
+              />
+            </>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-xs, 4px)" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "var(--font-size-body-base, 16px)",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                {preferences.length > 0 ? preferences.join(", ") : "None"}
+              </p>
+              {hideNonMatchingPreferences ? (
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "var(--font-size-body-base, 16px)",
+                    color: "var(--color-text-secondary)",
+                  }}
                 >
-                  <Chip
-                    label={preference}
-                    selected={active ? "True" : "False"}
-                    state={!isEditing ? "Disabled" : hovered ? "Hover" : "Default"}
-                    showLeadingIcon={active}
-                    leadingIcon={
-                      active ? <CheckIcon width={14} height={14} strokeWidth={2.25} aria-hidden="true" /> : undefined
-                    }
-                    onClick={() => togglePreference(preference)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <Checkbox
-            selection={hideNonMatchingPreferences ? "Checked" : "Unchecked"}
-            state={isEditing ? "Default" : "Disabled"}
-            size="MD"
-            label="Hide food that doesn't meet my preferences"
-            showDescription={false}
-            onClick={() => {
-              if (!isEditing) return;
-              setShowToast(false);
-              setHideNonMatchingPreferences((prev) => !prev);
-            }}
-          />
+                  Hide food that doesn&apos;t meet my preferences
+                </p>
+              ) : null}
+            </div>
+          )}
         </section>
 
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
@@ -441,6 +589,8 @@ export function AllergiesPage({
               variant="Primary"
               size="MD"
               label="Edit"
+              leadingIcon
+              leadingIconSwap={<PencilIcon width={16} height={16} strokeWidth={2} aria-hidden="true" />}
               onClick={() => {
                 setShowToast(false);
                 setIsEditing(true);
@@ -477,6 +627,7 @@ function Field({
   type = "text",
   autoComplete,
   placeholder,
+  disabled = false,
 }: {
   label: string;
   value: string;
@@ -484,24 +635,36 @@ function Field({
   type?: string;
   autoComplete?: string;
   placeholder?: string;
+  disabled?: boolean;
 }) {
+  const [focused, setFocused] = useState(false);
+
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <span style={{ fontSize: "var(--font-size-body-sm)", fontWeight: 600 }}>{label}</span>
       <input
         type={type}
         value={value}
+        disabled={disabled}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onChange={(event) => onChange(event.target.value)}
         style={{
           height: 44,
           paddingInline: 14,
           borderRadius: "var(--radius-control, 8px)",
-          border: "1px solid var(--color-border-subtle)",
+          border:
+            focused && !disabled
+              ? "1px solid var(--color-border-focus-secondary)"
+              : "1px solid var(--color-border-subtle)",
+          outline: "none",
+          background: disabled ? "var(--color-background-subtle, #f8f9fc)" : "var(--color-background-surface, #ffffff)",
           font: "inherit",
           fontSize: "var(--font-size-body-base)",
-          color: "var(--color-text-primary)",
+          color: disabled ? "var(--color-text-disabled, #b4b5bd)" : "var(--color-text-primary)",
+          cursor: disabled ? "not-allowed" : "text",
         }}
       />
     </label>

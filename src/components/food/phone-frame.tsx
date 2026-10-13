@@ -43,7 +43,7 @@ export function PhoneFrame({
           <div
             className="food-phone__scroll"
             style={{
-              paddingBottom: hideNav ? 32 : 120,
+              paddingBottom: hideNav ? 0 : 120,
               background: hideBlobs ? "var(--color-background-canvas, #ffffff)" : "transparent",
             }}
           >
