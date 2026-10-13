@@ -13,7 +13,7 @@
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "valere-DS": "github:shiarauzo/valere-DS"
+    "valere-DS": "file:./packages/valere-DS"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -1,10 +1,10 @@
 # food-rescue-karina
 
-Next.js app built on the [Valere design system](https://github.com/shiarauzo/valere-DS) with Kari project tokens and components synchronized from Figma.
+Next.js app built on the Valere design system in `packages/valere-DS`, with Kari project tokens and components synchronized from Figma.
 
 ## Setup
 
-The design system is a private GitHub repo. Make sure `git` can read `github.com/shiarauzo/valere-DS` before installing.
+The design system lives in this repository at `packages/valere-DS`, vendored from `shiarauzo/valere-DS` at `16206dc`. GitHub forking is disabled on that repository. `npm install` links the local package.
 
 ```bash
 npm install
