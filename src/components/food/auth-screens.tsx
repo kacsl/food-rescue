@@ -29,8 +29,31 @@ type FormProps = {
 export function LoggedOutHome({ onCreateAccount, onGoogle, onLogIn }: HomeProps) {
   return (
     <div style={{ display: "flex", flex: 1, flexDirection: "column", minHeight: "100%" }}>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 40,
+          paddingInline: 24,
+          textAlign: "center",
+        }}
+      >
         <Logo variant="landscape" width={296} height={86} role="img" aria-label="Food Rescue" />
+        <p
+          style={{
+            margin: 0,
+            maxWidth: "24ch",
+            textWrap: "balance",
+            fontSize: 18,
+            lineHeight: 1.4,
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          Find and share surplus food with your neighbors
+        </p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "0 17px 24px" }}>
         <Button variant="Primary" size="LG" label="Create account" onClick={onCreateAccount} style={{ width: "100%" }} />

@@ -20,17 +20,16 @@ function applyTheme(theme: Theme) {
 
 function subscribe(callback: () => void) {
   listeners = [...listeners, callback];
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  const onSystemChange = () => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
-    applyTheme(media.matches ? "dark" : "light");
+  const onStorageChange = (event: StorageEvent) => {
+    if (event.key !== STORAGE_KEY) return;
+    applyTheme(event.newValue === "dark" ? "dark" : "light");
     emitChange();
   };
-  media.addEventListener("change", onSystemChange);
+  window.addEventListener("storage", onStorageChange);
 
   return () => {
     listeners = listeners.filter((listener) => listener !== callback);
-    media.removeEventListener("change", onSystemChange);
+    window.removeEventListener("storage", onStorageChange);
   };
 }
 
@@ -43,8 +42,8 @@ function getServerSnapshot(): Theme {
 }
 
 /**
- * Reads and updates the app theme. The root layout script sets the initial
- * `data-theme` from storage or the system preference before first paint.
+ * Reads and updates the app theme. Always defaults to light mode unless the
+ * user has explicitly set dark mode in localStorage.
  */
 export function useTheme(): [Theme, (next: Theme) => void] {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
