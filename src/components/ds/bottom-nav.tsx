@@ -250,14 +250,14 @@ export function BottomNav({
                     paddingInline: 4,
                     borderRadius: "9999px",
                     background: "var(--color-action-primary, #dc2b10)",
-                    color: "#ffffff",
+                    color: "var(--color-action-on-action)",
                     fontSize: "10px",
                     fontWeight: 700,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     lineHeight: 1,
-                    boxShadow: "0 0 0 1.5px #ffffff, 0 2px 4px rgba(220, 43, 16, 0.3)",
+                    boxShadow: "0 0 0 1.5px var(--color-background-surface), 0 2px 4px rgba(220, 43, 16, 0.3)",
                     animation: "bottomNavBadgePop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) both",
                   }}
                 >

@@ -1,16 +1,19 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Badge } from "valere-DS";
 import { Button, IconButton } from "@/components/ds/button";
 import type { Donation, NearbyFood } from "./cards";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
+import { useFoodToast } from "./food-toast";
+import { NewDonationSheet, OptionCard, type DonationPublishPayload } from "./donation-step-flow";
 import {
+  CheckIcon,
   ClockIcon,
   ShieldCheckIcon,
   MapPinIcon,
   PhoneIcon,
-  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 
-export { NewDonationSheet, type DonationPublishPayload } from "./donation-step-flow";
+export { NewDonationSheet, OptionCard, type DonationPublishPayload };
 
 export type DonationTab = "open" | "closed" | "all";
 
@@ -87,7 +90,40 @@ export function SearchField({ open, onToggle }: { open: boolean; onToggle: () =>
   );
 }
 
-export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Sheet({
+  title,
+  headerIcon,
+  subtitle,
+  gap = 24,
+  paddingBottom = 32,
+  onClose,
+  children,
+}: {
+  title: string;
+  headerIcon?: ReactNode;
+  subtitle?: ReactNode;
+  gap?: number;
+  paddingBottom?: number;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleScrollActivity() {
+    setIsScrolling(true);
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 750);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
+
   return (
     <div
       role="presentation"
@@ -106,28 +142,52 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="food-sheet-modal"
+        className={isScrolling ? "food-sheet-modal food-sheet-modal--scrolling" : "food-sheet-modal"}
         onClick={(event) => event.stopPropagation()}
+        onScroll={handleScrollActivity}
+        onWheel={handleScrollActivity}
+        onTouchMove={handleScrollActivity}
         style={{
           width: "100%",
           maxHeight: "86%",
           overflowY: "auto",
           padding: 24,
-          paddingBottom: 112,
+          paddingBottom,
           borderTopLeftRadius: "var(--radius-card, 20px)",
           borderTopRightRadius: "var(--radius-card, 20px)",
-          background: "#ffffff",
+          background: "var(--color-background-surface)",
           display: "flex",
           flexDirection: "column",
-          gap: 16,
+          gap,
           boxShadow: "0 -8px 36px rgba(48, 48, 54, 0.2)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ margin: 0, fontSize: "var(--font-size-heading-lg, 20px)", fontWeight: 700, color: "var(--color-text-primary)" }}>
-            {title}
-          </h2>
-          <IconButton variant="Ghost" size="XS" aria-label="Close" onClick={onClose} icon={<CloseMark />} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: headerIcon ? "flex-start" : "center",
+              justifyContent: "space-between",
+              gap: 12,
+              width: "100%",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, flex: 1, minWidth: 0 }}>
+              {headerIcon}
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "var(--font-size-heading-lg, 20px)",
+                  fontWeight: "var(--font-weight-bold, 700)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {title}
+              </h2>
+            </div>
+            <IconButton variant="Ghost" size="XS" aria-label="Close" onClick={onClose} icon={<CloseMark />} />
+          </div>
+          {subtitle}
         </div>
         {children}
       </div>
@@ -145,7 +205,7 @@ function CloseMark() {
 
 /**
  * Flow 2: Browse and Claim Flow
- * Displays countdown timer, food's age, allergens, slot selection, and risk acknowledgment.
+ * Displays food details, freshness, pickup availability/slot selection, and risk acknowledgment.
  */
 export function NearbyDetail({
   item,
@@ -162,9 +222,17 @@ export function NearbyDetail({
 }) {
   const isExpired = item.status === "expired" || item.minutesLeft <= 0;
   const isClaimed = item.status === "claimed";
-  const defaultSlot = item.slots && item.slots.length > 0 ? item.slots[0].label : "Immediate (Next 60 min)";
+  const defaultSlot = item.slots && item.slots.length > 0 ? item.slots[0].label : "Immediate pickup";
   const [selectedSlot, setSelectedSlot] = useState<string>(defaultSlot);
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
+
+  const badgeLabel = isExpired
+    ? "Expired"
+    : isClaimed
+    ? "Claimed"
+    : item.pickupType === "scheduled"
+    ? "Needs scheduling"
+    : "Available now";
 
   function handleClaimClick() {
     if (!riskAcknowledged) return;
@@ -177,28 +245,20 @@ export function NearbyDetail({
 
   return (
     <Sheet title={item.title} onClose={onClose}>
-      <div style={{ position: "relative", width: "100%", height: 180, borderRadius: "var(--radius-card, 16px)", overflow: "hidden" }}>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: 180,
+          minHeight: 180,
+          flexShrink: 0,
+          borderRadius: "var(--radius-card, 16px)",
+          overflow: "hidden",
+        }}
+      >
         <img src={item.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        
-        {/* Countdown Badge overlay */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 10,
-            left: 10,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 12px",
-            borderRadius: "9999px",
-            background: isExpired ? "rgba(117, 117, 125, 0.9)" : "rgba(48, 48, 54, 0.85)",
-            color: "#ffffff",
-            fontSize: "12px",
-            fontWeight: 700,
-          }}
-        >
-          <ClockIcon width={14} height={14} strokeWidth={2} />
-          <span>{isExpired ? "Expired" : item.timeLeft}</span>
+        <div style={{ position: "absolute", top: 8, right: 8 }}>
+          <Badge tone="Neutral" emphasis="Subtle" label={badgeLabel} />
         </div>
       </div>
 
@@ -208,75 +268,101 @@ export function NearbyDetail({
           alt=""
           width={32}
           height={32}
-          style={{ width: 32, height: 32, borderRadius: 9999, objectFit: "cover" }}
+          style={{ width: 32, height: 32, borderRadius: 9999, objectFit: "cover", flexShrink: 0 }}
         />
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "14px", fontWeight: 600, color: "var(--color-text-primary)" }}>
-            {item.host}
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: "var(--font-size-body-sm, 14px)",
+              fontWeight: "var(--font-weight-semibold, 600)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            <span>{item.host}</span>
             {item.hostVerified !== false ? (
-              <span title="Phone verified neighbor" style={{ display: "inline-flex", color: "var(--color-text-tertiary)" }}>
+              <span title="Phone verified neighbor" style={{ display: "inline-flex", color: "var(--color-icon-muted, #75757d)" }}>
                 <ShieldCheckIcon width={14} height={14} aria-hidden="true" />
               </span>
             ) : null}
           </div>
-          <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-            {item.distance} • {item.area}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: "var(--font-size-body-xs, 12px)",
+              fontWeight: "var(--font-weight-regular, 400)",
+              color: "var(--color-text-tertiary, #75757d)",
+            }}
+          >
+            <MapPinIcon width={14} height={14} aria-hidden="true" style={{ color: "var(--color-icon-muted, #75757d)", flexShrink: 0 }} />
+            <span>
+              {item.distance} • {item.area}
+            </span>
           </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "13px", color: "var(--color-text-primary)" }}>
-        <span style={{ fontWeight: 700 }}>Freshness</span>
-        <span>Prepared: {item.foodAge}</span>
-        <span>Refrigeration: {item.keptRefrigerated ? "Kept cold" : "Not confirmed"}</span>
-        <span>Allergens: {item.allergens.length === 0 ? "None" : item.allergens.join(", ")}</span>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          fontSize: "var(--font-size-body-sm, 14px)",
+          fontWeight: "var(--font-weight-regular, 400)",
+          color: "var(--color-text-secondary, #5c5c63)",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "var(--font-size-body-base, 16px)",
+            fontWeight: "var(--font-weight-semibold, 600)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          Freshness
+        </span>
+        <span>{item.foodAge}</span>
+        <span>{item.keptRefrigerated ? "Kept cold" : "Room temperature"}</span>
+        <span>
+          {item.allergens.length === 0 ? "No allergens" : `Contains ${item.allergens.join(", ").toLowerCase()}`}
+        </span>
       </div>
 
-      <div>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)", display: "block", marginBottom: 8 }}>
-          {item.pickupType === "immediate" ? "Pickup" : "Choose a pickup slot"}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <span
+          style={{
+            fontSize: "var(--font-size-body-base, 16px)",
+            fontWeight: "var(--font-weight-semibold, 600)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          Pickup
         </span>
 
         {item.pickupType === "immediate" ? (
-          <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-            Immediate pickup (next 60 min)
+          <div
+            style={{
+              fontSize: "var(--font-size-body-sm, 14px)",
+              fontWeight: "var(--font-weight-regular, 400)",
+              color: "var(--color-text-secondary, #5c5c63)",
+            }}
+          >
+            Available now
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {(item.slots || [{ id: "slot-1", label: "Today 4:00 PM – 4:30 PM" }, { id: "slot-2", label: "Today 4:30 PM – 5:00 PM" }]).map((slot) => {
-              const isSelected = selectedSlot === slot.label;
-              return (
-                <button
-                  key={slot.id}
-                  type="button"
-                  onClick={() => setSelectedSlot(slot.label)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid var(--color-border-subtle, #e6e7ed)",
-                    background: isSelected ? "var(--color-background-muted, #f2f2f6)" : "#ffffff",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <span style={{ fontSize: "13px", fontWeight: isSelected ? 700 : 500, color: "var(--color-text-primary)" }}>
-                    {slot.label}
-                  </span>
-                  <span
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 9999,
-                      border: isSelected ? "5px solid var(--color-text-primary)" : "2px solid #b4b5bd",
-                      background: "#fff",
-                    }}
-                  />
-                </button>
-              );
-            })}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-sm, 8px)" }}>
+            {(item.slots || [{ id: "slot-1", label: "Today 4:00 PM – 4:30 PM" }, { id: "slot-2", label: "Today 4:30 PM – 5:00 PM" }]).map((slot) => (
+              <OptionCard
+                key={slot.id}
+                label={slot.label}
+                selected={selectedSlot === slot.label}
+                onClick={() => setSelectedSlot(slot.label)}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -286,185 +372,270 @@ export function NearbyDetail({
           display: "flex",
           alignItems: "flex-start",
           gap: 10,
-          padding: "12px",
-          borderRadius: "10px",
-          background: "var(--color-background-muted, #f2f2f6)",
+          padding: 12,
+          borderRadius: 10,
+          background: "var(--color-background-subtle, #f8f9fc)",
           cursor: "pointer",
+          position: "relative",
         }}
       >
         <input
           type="checkbox"
           checked={riskAcknowledged}
           onChange={(e) => setRiskAcknowledged(e.target.checked)}
-          style={{ width: 18, height: 18, marginTop: 2, accentColor: "var(--color-text-primary, #303036)", cursor: "pointer" }}
+          style={{
+            position: "absolute",
+            opacity: 0,
+            width: 1,
+            height: 1,
+            pointerEvents: "none",
+          }}
         />
-        <span style={{ fontSize: "12px", lineHeight: "17px", color: "var(--color-text-primary)" }}>
-          <strong>Safety risk acknowledgment:</strong> I understand this food is prepared by a neighbor home cook. I agree to inspect freshness upon pickup and consume at my own discretion.
+        <span
+          aria-hidden="true"
+          style={{
+            width: "var(--size-icon-md, 20px)",
+            height: "var(--size-icon-md, 20px)",
+            borderRadius: "var(--radius-control-sm, 6px)",
+            border: riskAcknowledged
+              ? "var(--border-hairline, 1px) solid var(--color-action-primary)"
+              : "var(--border-hairline, 1px) solid var(--color-border-default, #93949b)",
+            background: riskAcknowledged ? "var(--color-action-primary)" : "var(--color-background-surface)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          {riskAcknowledged ? (
+            <CheckIcon width={16} height={16} strokeWidth={2} style={{ color: "var(--color-action-on-action, #ffffff)" }} />
+          ) : null}
+        </span>
+        <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0, color: "var(--color-text-primary)" }}>
+          <span
+            style={{
+              fontSize: "var(--font-size-body-sm, 14px)",
+              fontWeight: "var(--font-weight-bold, 700)",
+              lineHeight: "17px",
+              minHeight: 20,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            Safety risk acknowledgment
+          </span>
+          <span
+            style={{
+              fontSize: "var(--font-size-body-xs, 12px)",
+              fontWeight: "var(--font-weight-regular, 400)",
+              lineHeight: "17px",
+            }}
+          >
+            I know a neighbor made this food. I’ll give it a quick check when I pick it up and enjoy it at my own risk.
+          </span>
         </span>
       </label>
 
       {/* Action Button */}
       {isExpired ? (
-        <Button variant="Secondary" size="MD" disabled label="Listing Expired" style={{ width: "100%" }} />
+        <Button variant="Secondary" size="LG" disabled label="Listing Expired" style={{ width: "100%", flexShrink: 0 }} />
       ) : isClaimed ? (
-        <Button variant="Secondary" size="MD" disabled label="Already Claimed by a Neighbor" style={{ width: "100%" }} />
+        <Button variant="Secondary" size="LG" disabled label="Claim food" style={{ width: "100%", flexShrink: 0 }} />
       ) : (
         <Button
           variant="Primary"
-          size="MD"
+          size="LG"
           disabled={!riskAcknowledged}
-          label={
-            !riskAcknowledged
-              ? "Acknowledge risk above to claim"
-              : item.pickupType === "immediate"
-              ? "Claim for Immediate Pickup (60m)"
-              : `Claim slot (${selectedSlot.split(" ")[0]}...)`
-          }
+          label="Claim food"
           onClick={handleClaimClick}
-          style={{ width: "100%" }}
+          style={{ width: "100%", flexShrink: 0 }}
         />
       )}
     </Sheet>
   );
 }
 
+export type ClaimSheetMode = "requested" | "claimed";
+
 /**
- * Flow 3: Pickup Handoff Screen (The Metric's Climax & Second Event)
- * Shows exact address, WhatsApp button, active timer, and "Mark as Picked Up".
+ * Flow 3: Pickup Handoff Sheets
+ * - "requested" (55:5741): Shown immediately after claiming food; exact location pending host acceptance.
+ * - "claimed" (65:6570): Shown when opening an already-claimed food; request accepted with full address and copy action.
  */
 export function ClaimHandoffSheet({
   food,
   selectedSlot,
+  mode = "requested",
   onClose,
-  onMarkPickedUp,
   onCancelClaim,
 }: {
   food: NearbyFood;
   selectedSlot: string;
+  mode?: ClaimSheetMode;
   onClose: () => void;
-  onMarkPickedUp: () => void;
+  onMarkPickedUp?: () => void;
   onCancelClaim: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  const { showToast } = useFoodToast();
+  const hostFirstName = food.host.split(" ")[0] || food.host;
+  const slotLabel = food.pickupType === "immediate" ? "Immediate pickup" : selectedSlot;
+  const areaWithCity = food.area.includes("Cotia") ? food.area : `${food.area}, Cotia`;
+  const streetAddress = food.address
+    ? food.address.split(" - ")[0].trim()
+    : "Via das Margaridas, 123";
 
-  function copyAddress() {
-    navigator.clipboard?.writeText(food.address || "Rua das Acácias, 142, Apt 4B - Granja Viana");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copyAddress() {
+    const fullAddress = `${streetAddress}, ${areaWithCity}`;
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard API unavailable");
+      await navigator.clipboard.writeText(fullAddress);
+      showToast({ tone: "Success", title: "Address copied" });
+    } catch {
+      showToast({ tone: "Error", title: "Couldn't copy the address", body: "Select the address to copy it manually." });
+    }
   }
 
   function openWhatsApp() {
     const text = encodeURIComponent(
-      `Hi ${food.host}! I just claimed your ${food.title} on Kari. I'm picking it up for the slot: ${selectedSlot}.`,
+      `Hi ${food.host}! I just claimed your ${food.title} on Kari. I'm picking it up for the slot: ${slotLabel}.`,
     );
     window.open(`https://wa.me/5511988776655?text=${text}`, "_blank");
   }
 
+  const isAccepted = mode === "claimed";
+
   return (
-    <Sheet title="Food claimed" onClose={onClose}>
-      <p style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" }}>
-        You&apos;re rescuing {food.title}.
-      </p>
-
-      {/* Address Card (Revealed after claim) */}
-      <div
-        style={{
-          padding: 16,
-          borderRadius: "12px",
-          background: "#ffffff",
-          border: "1px solid var(--color-border-subtle, #e6e7ed)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            Pickup Address
-          </span>
-          <button
-            type="button"
-            onClick={copyAddress}
-            style={{
-              border: "none",
-              background: "transparent",
-              color: "var(--color-text-secondary)",
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {copied ? "✓ Copied!" : "Copy address"}
-          </button>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-          <MapPinIcon width={20} height={20} color="var(--color-text-secondary)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-              {food.address || "Rua das Acácias, 142, Apt 4B"}
+    <Sheet
+      gap={32}
+      title={isAccepted ? "Request accepted!" : "Food claimed!"}
+      headerIcon={
+        <img
+          src={isAccepted ? "/food/claimed-check.svg" : "/food/claimed-pending.svg"}
+          alt=""
+          width={48}
+          height={48}
+          style={{ display: "block" }}
+        />
+      }
+      subtitle={
+        <p
+          style={{
+            margin: 0,
+            fontSize: 15,
+            fontWeight: "var(--font-weight-regular, 400)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {isAccepted ? `Message ${hostFirstName} to settle the pickup details.` : `You're rescuing ${food.title}.`}
+        </p>
+      }
+      onClose={onClose}
+    >
+      {isAccepted ? (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <MapPinIcon
+                width={20}
+                height={20}
+                aria-hidden="true"
+                style={{ color: "var(--color-icon-muted, #75757d)", flexShrink: 0 }}
+              />
+              <span
+                style={{
+                  fontSize: "var(--font-size-body-base, 16px)",
+                  fontWeight: "var(--font-weight-regular, 400)",
+                  color: "var(--color-text-tertiary, #75757d)",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {streetAddress}
+              </span>
             </div>
-            <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-              {food.area} • Ring buzzer 4B or message below
+            <div style={{ paddingLeft: 30 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "var(--font-size-body-sm, 14px)",
+                  fontWeight: "var(--font-weight-regular, 400)",
+                  color: "var(--color-text-tertiary, #75757d)",
+                }}
+              >
+                {areaWithCity}
+              </p>
             </div>
           </div>
+          <IconButton
+            variant="Ghost"
+            size="MD"
+            aria-label="Copy address"
+            onClick={copyAddress}
+            icon={<img src="/food/copy.svg" alt="" width={20} height={20} style={{ display: "block" }} />}
+          />
         </div>
-      </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <MapPinIcon
+              width={20}
+              height={20}
+              aria-hidden="true"
+              style={{ color: "var(--color-icon-muted, #75757d)", flexShrink: 0 }}
+            />
+            <span
+              style={{
+                fontSize: "var(--font-size-body-base, 16px)",
+                fontWeight: "var(--font-weight-regular, 400)",
+                color: "var(--color-text-tertiary, #75757d)",
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              {areaWithCity}
+            </span>
+          </div>
+          <div style={{ paddingLeft: 30 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "var(--font-size-body-sm, 14px)",
+                fontWeight: "var(--font-weight-regular, 400)",
+                color: "var(--color-text-tertiary, #75757d)",
+              }}
+            >
+              The exact location is revealed once {hostFirstName} accepts your request
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* Scheduled Slot & Countdown */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 14px",
-          borderRadius: "10px",
-          background: "var(--color-background-subtle, #f8f9fc)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ClockIcon width={18} height={18} color="var(--color-text-secondary)" />
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-text-primary)" }}>
-            Slot: {selectedSlot}
-          </span>
-        </div>
-        <span style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>
-          {food.timeLeft}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
+        <ClockIcon
+          width={18}
+          height={18}
+          aria-hidden="true"
+          style={{ color: "var(--color-icon-muted, #75757d)", flexShrink: 0 }}
+        />
+        <span
+          style={{
+            fontSize: "var(--font-size-body-base, 16px)",
+            fontWeight: "var(--font-weight-regular, 400)",
+            color: "var(--color-text-tertiary, #75757d)",
+          }}
+        >
+          {slotLabel}
         </span>
       </div>
 
-      {/* WhatsApp Coordination Button (BRD Mandate) */}
-      <button
-        type="button"
-        onClick={openWhatsApp}
-        className="food-card-interactive"
-        style={{
-          width: "100%",
-          padding: "12px 16px",
-          borderRadius: "12px",
-          border: "none",
-          background: "#25D366",
-          color: "#ffffff",
-          fontSize: "14px",
-          fontWeight: 700,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-        }}
-      >
-        <ChatBubbleLeftRightIcon width={18} height={18} />
-        <span>Coordinate with {food.host} on WhatsApp</span>
-      </button>
-
-      {/* Mark as Picked Up Button (The Metric's Second Event) */}
       <Button
-        variant="Primary"
-        size="MD"
-        label="✓ I Have Picked Up the Food"
-        onClick={onMarkPickedUp}
-        style={{ width: "100%", height: 48, fontSize: "15px" }}
+        variant="Outline"
+        size="LG"
+        leadingIcon
+        leadingIconSwap={<img src="/food/whatsapp.svg" alt="" width={20} height={20} style={{ display: "block" }} />}
+        label={`Message ${hostFirstName}`}
+        onClick={openWhatsApp}
+        style={{ width: "100%" }}
       />
 
       <button
@@ -473,14 +644,17 @@ export function ClaimHandoffSheet({
         style={{
           border: "none",
           background: "transparent",
-          color: "var(--color-text-tertiary)",
-          fontSize: "12px",
+          padding: 0,
+          width: "100%",
+          color: "var(--color-text-tertiary, #75757d)",
+          fontSize: "var(--font-size-body-xs, 12px)",
+          fontWeight: "var(--font-weight-semibold, 600)",
           cursor: "pointer",
           textAlign: "center",
-          textDecoration: "underline",
+          fontFamily: "inherit",
         }}
       >
-        Can&apos;t make it? Release food so another neighbor can claim
+        Can’t make it? Release it so someone else can claim it.
       </button>
     </Sheet>
   );
@@ -607,88 +781,247 @@ export function PhoneVerificationModal({
   );
 }
 
+function WhatsAppGlyph() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path
+        d="M10.0333 1.66667C5.48333 1.66667 1.775 5.375 1.775 9.925C1.775 11.3833 2.15833 12.8 2.875 14.05L1.70833 18.3333L6.08333 17.1833C7.29167 17.8417 8.65 18.1917 10.0333 18.1917C14.5833 18.1917 18.2917 14.4833 18.2917 9.93333C18.2917 7.725 17.4333 5.65 15.875 4.09167C14.3167 2.525 12.2417 1.66667 10.0333 1.66667ZM10.0417 3.05833C11.875 3.05833 13.5917 3.775 14.8917 5.075C16.1833 6.375 16.9 8.1 16.9 9.93333C16.9 13.7167 13.8167 16.7917 10.0333 16.7917C8.8 16.7917 7.59167 16.4667 6.54167 15.8333L6.29167 15.6917L3.69167 16.375L4.38333 13.8417L4.21667 13.575C3.53333 12.5 3.16667 11.225 3.16667 9.925C3.175 6.14167 6.25 3.05833 10.0417 3.05833ZM7.10833 6.10833C6.975 6.10833 6.75 6.15833 6.55833 6.36667C6.375 6.575 5.83333 7.08333 5.83333 8.09167C5.83333 9.10833 6.575 10.0833 6.66667 10.225C6.78333 10.3667 8.13333 12.45 10.2083 13.3333C10.7 13.5583 11.0833 13.6833 11.3833 13.775C11.875 13.9333 12.325 13.9083 12.6833 13.8583C13.0833 13.8 13.9 13.3583 14.075 12.875C14.25 12.3917 14.25 11.9833 14.2 11.8917C14.1417 11.8083 14.0083 11.7583 13.8 11.6667C13.5917 11.55 12.575 11.05 12.3917 10.9833C12.2 10.9167 12.0833 10.8833 11.925 11.0833C11.7917 11.2917 11.3917 11.7583 11.275 11.8917C11.15 12.0333 11.0333 12.05 10.8333 11.95C10.6167 11.8417 9.95 11.625 9.16667 10.925C8.55 10.375 8.14167 9.7 8.01667 9.49167C7.91667 9.29167 8.00833 9.16667 8.10833 9.075C8.2 8.98333 8.33333 8.83333 8.41667 8.70833C8.525 8.59167 8.55833 8.5 8.625 8.36667C8.69167 8.225 8.65833 8.10833 8.60833 8.00833C8.55833 7.91667 8.14167 6.88333 7.96667 6.475C7.8 6.075 7.63333 6.125 7.5 6.11667C7.38333 6.11667 7.25 6.10833 7.10833 6.10833Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 /**
- * Donor Detail view with claim management and "Mark as Picked Up".
+ * Donor Detail view with claim management, "Accept claim", and "Mark as Picked Up".
  */
 export function DonationDetail({
   item,
   onClose,
   onToggleStatus,
+  onAcceptClaim,
   onMarkPickedUp,
 }: {
   item: Donation;
   onClose: () => void;
   onToggleStatus: () => void;
+  onAcceptClaim?: () => void;
   onMarkPickedUp?: () => void;
 }) {
+  const { showToast } = useFoodToast();
+  const [localAccepted, setLocalAccepted] = useState(false);
+
   const isClaimed = item.claimStatus === "claimed";
   const isClosed = item.status === "closed";
+  const isAccepted = Boolean(item.claimAccepted || localAccepted);
+  const claimerFirstName = (item.claimedBy || "Dev").split(" ")[0] || "claimer";
+
+  const badgeLabel = isClosed
+    ? "Picked up"
+    : isClaimed
+    ? isAccepted
+      ? "Claim accepted"
+      : "Claimed"
+    : "Available now";
 
   function openWhatsAppClaimer() {
     const text = encodeURIComponent(`Hi ${item.claimedBy || "there"}! I'm ready for your pickup of ${item.title}.`);
     window.open(`https://wa.me/5511987654321?text=${text}`, "_blank");
   }
 
+  function handleAcceptClaim() {
+    setLocalAccepted(true);
+    if (onAcceptClaim) {
+      onAcceptClaim();
+    } else {
+      showToast({
+        tone: "Success",
+        title: "Claim accepted",
+        body: "Your pickup location will be shared with the claimer.",
+        position: "top",
+      });
+    }
+  }
+
   return (
     <Sheet title={item.title} onClose={onClose}>
-      <img
-        src={item.image}
-        alt=""
-        style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: "var(--radius-card, 16px)" }}
-      />
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: 180,
+          minHeight: 180,
+          flexShrink: 0,
+          borderRadius: "var(--radius-card, 16px)",
+          overflow: "hidden",
+        }}
+      >
+        <img src={item.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <div style={{ position: "absolute", top: 8, right: 8 }}>
+          <Badge tone="Neutral" emphasis="Subtle" label={badgeLabel} />
+        </div>
+      </div>
 
       {/* Claim Status Notification for Donor */}
       {isClaimed ? (
-        <>
-          <p style={{ margin: 0, fontSize: "14px", color: "var(--color-text-secondary)" }}>
-            Claimed by {item.claimedBy || "Dev"}. Slot: {item.claimedSlot || "Today 4:00 PM"}.
-          </p>
-          <button
-            type="button"
-            onClick={openWhatsAppClaimer}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img
+              src="/food/karina.png"
+              alt=""
+              width={32}
+              height={32}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "var(--radius-pill, 9999px)",
+                objectFit: "cover",
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: "var(--font-size-body-sm, 14px)",
+                  fontWeight: "var(--font-weight-semibold, 600)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                <span>Claimed by {item.claimedBy || "Dev"}</span>
+                <span title="Phone verified neighbor" style={{ display: "inline-flex", color: "var(--color-icon-muted, #75757d)" }}>
+                  <ShieldCheckIcon width={14} height={14} aria-hidden="true" />
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: "var(--font-size-body-xs, 12px)",
+                  fontWeight: "var(--font-weight-regular, 400)",
+                  color: "var(--color-text-tertiary, #75757d)",
+                }}
+              >
+                {isAccepted
+                  ? `Pickup location shared with ${claimerFirstName}`
+                  : "Accept claim to share your pickup location"}
+              </span>
+            </div>
+          </div>
+
+          <div
             style={{
-              padding: "10px 12px",
-              borderRadius: "8px",
-              background: "#25D366",
-              color: "#fff",
-              border: "none",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
+              gap: 8,
+              fontSize: "var(--font-size-body-base, 16px)",
+              fontWeight: "var(--font-weight-regular, 400)",
+              color: "var(--color-text-tertiary, #75757d)",
             }}
           >
-            <ChatBubbleLeftRightIcon width={16} height={16} />
-            <span>Chat with {item.claimedBy || "claimer"} on WhatsApp</span>
-          </button>
-        </>
+            <ClockIcon
+              width={18}
+              height={18}
+              aria-hidden="true"
+              style={{ color: "var(--color-icon-muted, #75757d)", flexShrink: 0 }}
+            />
+            <span>{item.claimedSlot || "Today 4:00 PM"}</span>
+          </div>
+        </div>
       ) : isClosed ? (
-        <p style={{ margin: 0, fontSize: "14px", color: "var(--color-text-secondary)" }}>Picked up.</p>
+        <p style={{ margin: 0, fontSize: "var(--font-size-body-sm, 14px)", color: "var(--color-text-secondary)" }}>
+          {item.pickedUpAt ? `Picked up • ${item.pickedUpAt}` : "Picked up."}
+        </p>
       ) : (
-        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-sm)" }}>
+        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-sm, 14px)" }}>
           Active listing · {item.interested === 0 ? "No claims yet" : `${item.interested} neighbors interested`}
         </p>
       )}
 
+      {item.foodAge ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            fontSize: "var(--font-size-body-sm, 14px)",
+            fontWeight: "var(--font-weight-regular, 400)",
+            color: "var(--color-text-secondary, #5c5c63)",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "var(--font-size-body-base, 16px)",
+              fontWeight: "var(--font-weight-semibold, 600)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            Freshness
+          </span>
+          <span>{item.foodAge}</span>
+          {item.keptRefrigerated !== undefined ? (
+            <span>{item.keptRefrigerated ? "Kept cold" : "Room temperature"}</span>
+          ) : null}
+          {item.allergens ? (
+            <span>
+              {item.allergens.length === 0 ? "No allergens" : `Contains ${item.allergens.join(", ").toLowerCase()}`}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       {/* Action Buttons */}
       {isClaimed ? (
-        <Button
-          variant="Primary"
-          size="MD"
-          label="✓ Confirm Food Picked Up"
-          onClick={onMarkPickedUp || onToggleStatus}
-          style={{ width: "100%", height: 46 }}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+          {!isAccepted ? (
+            <>
+              <Button
+                variant="Primary"
+                size="LG"
+                label="Accept claim"
+                onClick={handleAcceptClaim}
+                style={{ width: "100%", flexShrink: 0 }}
+              />
+              <Button
+                variant="Outline"
+                size="LG"
+                leadingIcon
+                leadingIconSwap={<WhatsAppGlyph />}
+                label={`Message ${claimerFirstName}`}
+                onClick={openWhatsAppClaimer}
+                style={{ width: "100%", flexShrink: 0 }}
+              />
+            </>
+          ) : (
+            <>
+              <Button
+                variant="Primary"
+                size="LG"
+                leadingIcon
+                leadingIconSwap={<WhatsAppGlyph />}
+                label={`Message ${claimerFirstName}`}
+                onClick={openWhatsAppClaimer}
+                style={{ width: "100%", flexShrink: 0 }}
+              />
+              <Button
+                variant="Ghost"
+                size="LG"
+                leadingIcon
+                leadingIconSwap={<CheckIcon width={20} height={20} strokeWidth={2} aria-hidden="true" />}
+                label="Mark as picked up"
+                onClick={onMarkPickedUp || onToggleStatus}
+                style={{ width: "100%", flexShrink: 0 }}
+              />
+            </>
+          )}
+        </div>
       ) : (
         <Button
           variant="Primary"
-          size="MD"
-          label={isClosed ? "Reopen Donation" : "Close Donation"}
+          size="LG"
+          label={isClosed ? "Reopen donation" : "Close donation"}
           onClick={onToggleStatus}
-          style={{ width: "100%" }}
+          style={{ width: "100%", flexShrink: 0 }}
         />
       )}
     </Sheet>

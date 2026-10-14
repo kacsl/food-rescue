@@ -321,6 +321,7 @@ export function Button({
         minWidth: sizeVars.height,
         paddingInline: showLabel ? sizeVars.paddingInline : sizeVars.height,
         gap: sizeVars.gap,
+        flexShrink: 0,
         borderRadius: "var(--radius-control)",
         ...buttonPaintVars(variant, isDisabled ? "Disabled" : state),
         fontFamily: "var(--font-family-brand)",

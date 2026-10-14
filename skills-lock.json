@@ -31,6 +31,12 @@
       "skillPath": "skills/design-systems/SKILL.md",
       "computedHash": "549a8623a1332c4a4f3188d7cefd2c1fad7571bbbfdf171ccc0d965223ee2283"
     },
+    "improve-animations": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/improve-animations/SKILL.md",
+      "computedHash": "524ea241e41d58bbdd8e288700fe24f5725e2a2f3ae7186ad7cebf9055058356"
+    },
     "interaction-design": {
       "source": "cuellarfr/design-skills",
       "sourceType": "github",

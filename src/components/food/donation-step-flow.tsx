@@ -136,7 +136,7 @@ function optionPaint(state: OptionVisualState) {
   };
 }
 
-function OptionCard({
+export function OptionCard({
   label,
   description,
   selected,

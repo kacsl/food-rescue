@@ -173,7 +173,7 @@ export function Toast({
 }) {
   return (
     <div
-      role="status"
+      role={tone === "Error" ? "alert" : "status"}
       style={{
         display: "flex",
         alignItems: showBody || showAction ? "flex-start" : "center",

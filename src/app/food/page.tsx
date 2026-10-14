@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Chip } from "valere-DS";
 import { KariAvatar } from "@/components/ds/avatar";
 import {
+  AddressPage,
   AllergiesPage,
   INITIAL_PROFILE,
   ProfileDataPage,
@@ -22,11 +23,13 @@ import {
   SearchField,
   ClaimHandoffSheet,
   PhoneVerificationModal,
+  type ClaimSheetMode,
   type DonationTab,
   type FoodNotification,
 } from "@/components/food/panels";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
 import { LoggedOutHome, LoginScreen, SignUpScreen } from "@/components/food/auth-screens";
+import { FoodToastProvider, FoodToastViewport, useFoodToast } from "@/components/food/food-toast";
 import {
   clearFoodSession,
   GOOGLE_PROTOTYPE_SESSION,
@@ -51,8 +54,8 @@ const INITIAL_NEARBY: NearbyFood[] = [
     foodAge: "Harvested today",
     preparedDaysAgo: 0,
     keptRefrigerated: true,
-    allergens: [],
-    address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
+    allergens: ["Soy"],
+    address: "Via das Margaridas, 123 - Granja Viana",
     pickupType: "immediate",
     status: "available",
   },
@@ -72,7 +75,7 @@ const INITIAL_NEARBY: NearbyFood[] = [
     preparedDaysAgo: 1,
     keptRefrigerated: true,
     allergens: [],
-    address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
+    address: "Via das Margaridas, 123 - Granja Viana",
     pickupType: "scheduled",
     slots: [
       { id: "slot-1", label: "Today 4:00 PM – 4:30 PM" },
@@ -136,6 +139,7 @@ const INITIAL_DONATIONS: Donation[] = [
     claimerPhone: "+55 11 98765-4321",
     timeLeft: "35m left",
     foodAge: "Fresh today",
+    keptRefrigerated: true,
     allergens: ["Eggs"],
   },
   {
@@ -147,6 +151,7 @@ const INITIAL_DONATIONS: Donation[] = [
     claimStatus: "unclaimed",
     timeLeft: "50m left",
     foodAge: "Cooked today",
+    keptRefrigerated: true,
     allergens: ["Soy"],
   },
   {
@@ -158,6 +163,7 @@ const INITIAL_DONATIONS: Donation[] = [
     claimStatus: "picked_up",
     pickedUpAt: "Rescued in 38m",
     foodAge: "Harvested yesterday",
+    keptRefrigerated: false,
     allergens: [],
   },
 ];
@@ -208,6 +214,15 @@ function matches(title: string, query: string) {
 }
 
 export default function FoodPage() {
+  return (
+    <FoodToastProvider>
+      <FoodApp />
+    </FoodToastProvider>
+  );
+}
+
+function FoodApp() {
+  const { showToast, dismissToast } = useFoodToast();
   const [showSplash, setShowSplash] = useState(true);
   const [screen, setScreen] = useState<FoodScreen>("nearby");
   const [tab, setTab] = useState<DonationTab>("open");
@@ -225,16 +240,15 @@ export default function FoodPage() {
   const [donationItem, setDonationItem] = useState<Donation | null>(null);
   const [selectedNotif, setSelectedNotif] = useState<FoodNotification | null>(null);
   const [composing, setComposing] = useState(false);
-  const [claimHandoff, setClaimHandoff] = useState<{ food: NearbyFood; slot: string } | null>(null);
+  const [claimHandoff, setClaimHandoff] = useState<{ food: NearbyFood; slot: string; mode: ClaimSheetMode } | null>(null);
 
   // Phone Verification State (BRD Requirement)
   const [isUserVerified, setIsUserVerified] = useState(true);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [pendingVerificationAction, setPendingVerificationAction] = useState<(() => void) | null>(null);
 
-  const [notice, setNotice] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileRecord>(INITIAL_PROFILE);
-  const [profileView, setProfileView] = useState<null | "menu" | "data" | "allergies">(null);
+  const [profileView, setProfileView] = useState<null | "menu" | "data" | "address" | "allergies">(null);
   const [session, setSession] = useState<FoodSession | null>(null);
   const [authView, setAuthView] = useState<"home" | "login" | "signup">("home");
 
@@ -286,7 +300,6 @@ export default function FoodPage() {
     setSelectedNotif(null);
     setClaimHandoff(null);
     setComposing(false);
-    setNotice(null);
   }
 
   function toggleSearch() {
@@ -302,7 +315,7 @@ export default function FoodPage() {
 
   function markAllNotificationsRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setNotice("All notifications marked as read.");
+    showToast({ tone: "Success", title: "All notifications marked as read" });
   }
 
   // Verification helper
@@ -314,7 +327,7 @@ export default function FoodPage() {
   function onPhoneVerified() {
     setIsUserVerified(true);
     setShowPhoneModal(false);
-    setNotice("✓ Phone verified successfully! Basic accountability enabled.");
+    showToast({ tone: "Success", title: "Phone verified", body: "Basic accountability enabled." });
     if (pendingVerificationAction) {
       pendingVerificationAction();
       setPendingVerificationAction(null);
@@ -323,18 +336,22 @@ export default function FoodPage() {
 
   // Claim Flow Handler (Browse -> Risk Acknowledgment -> Claim Handoff)
   function handleClaimFood(food: NearbyFood, slot: string) {
+    const updatedFood: NearbyFood = {
+      ...food,
+      status: "claimed",
+      badge: "Claimed",
+      claimedBy: "You",
+      claimedSlot: slot,
+    };
+
     // 1. Mark item as claimed in nearby list
     setNearbyList((prev) =>
-      prev.map((item) =>
-        item.id === food.id
-          ? { ...item, status: "claimed", badge: "Claimed", claimedBy: "You", claimedSlot: slot }
-          : item,
-      ),
+      prev.map((item) => (item.id === food.id ? updatedFood : item)),
     );
 
-    // 2. Close detail sheet and open Handoff Screen
+    // 2. Close detail sheet and open Requested Handoff Screen (no toast)
     setNearbyItem(null);
-    setClaimHandoff({ food, slot });
+    setClaimHandoff({ food: updatedFood, slot, mode: "requested" });
 
     // 3. Generate push notifications for donor and claimer (BRD requirement)
     setNotifications((prev) => [
@@ -349,8 +366,22 @@ export default function FoodPage() {
       },
       ...prev,
     ]);
+  }
 
-    setNotice(`🎉 You claimed ${food.title}! Address and WhatsApp coordination unlocked.`);
+  function handleOpenNearbyFood(item: NearbyFood) {
+    if (item.status === "claimed") {
+      setClaimHandoff({
+        food: item,
+        slot:
+          item.claimedSlot ||
+          (item.pickupType === "immediate"
+            ? "Immediate pickup"
+            : item.slots?.[0]?.label || "Immediate pickup"),
+        mode: "claimed",
+      });
+      return;
+    }
+    setNearbyItem(item);
   }
 
   // Pickup Confirmation (Claimer or Donor records "Picked up")
@@ -388,18 +419,30 @@ export default function FoodPage() {
       ...prev,
     ]);
 
-    setNotice(`✓ "${title}" marked as picked up! Food waste prevented 🎉`);
+    showToast({ tone: "Success", title: `${title} marked as picked up`, body: "Food waste prevented." });
   }
 
   // Cancel / Release Claim (Edge state)
   function handleCancelClaim(foodId: string, title: string) {
     setNearbyList((prev) =>
       prev.map((item) =>
-        item.id === foodId ? { ...item, status: "available", badge: "Available now", claimedBy: undefined } : item,
+        item.id === foodId
+          ? {
+              ...item,
+              status: "available",
+              badge: item.pickupType === "scheduled" ? "Needs scheduling" : "Available now",
+              claimedBy: undefined,
+              claimedSlot: undefined,
+            }
+          : item,
       ),
     );
     setClaimHandoff(null);
-    setNotice(`Claim cancelled for ${title}. Item released back to nearby neighbors.`);
+    showToast({
+      tone: "Info",
+      title: `Claim cancelled for ${title}`,
+      body: "Item released back to nearby neighbors.",
+    });
   }
 
   // Create Listing Handler (Supply side)
@@ -426,6 +469,7 @@ export default function FoodPage() {
       claimStatus: "unclaimed",
       timeLeft: data.pickupType === "immediate" ? "60m left" : "Today 6:00 PM",
       foodAge: data.foodAge,
+      keptRefrigerated: data.keptRefrigerated,
       allergens: data.allergens,
     };
 
@@ -471,7 +515,7 @@ export default function FoodPage() {
 
     setComposing(false);
     setTab("open");
-    setNotice(`"${data.title}" is now live for neighbor pickup!`);
+    showToast({ tone: "Success", title: `${data.title} is live`, body: "Neighbors nearby can claim it now." });
   }
 
   // Dynamic Modals & Sheets Overlay
@@ -484,6 +528,7 @@ export default function FoodPage() {
     <ClaimHandoffSheet
       food={claimHandoff.food}
       selectedSlot={claimHandoff.slot}
+      mode={claimHandoff.mode}
       onClose={() => setClaimHandoff(null)}
       onMarkPickedUp={() => handleMarkPickedUp(claimHandoff.food.id, claimHandoff.food.title)}
       onCancelClaim={() => handleCancelClaim(claimHandoff.food.id, claimHandoff.food.title)}
@@ -502,6 +547,19 @@ export default function FoodPage() {
     <DonationDetail
       item={donationItem}
       onClose={() => setDonationItem(null)}
+      onAcceptClaim={() => {
+        const updated: Donation = { ...donationItem, claimAccepted: true };
+        setDonations((current) =>
+          current.map((item) => (item.id === donationItem.id ? updated : item)),
+        );
+        setDonationItem(updated);
+        showToast({
+          tone: "Success",
+          title: "Claim accepted",
+          body: "Your pickup location will be shared with the claimer.",
+          position: "top",
+        });
+      }}
       onToggleStatus={() => {
         const nextStatus = donationItem.status === "open" ? "closed" : "open";
         setDonations((current) =>
@@ -509,11 +567,13 @@ export default function FoodPage() {
             item.id === donationItem.id ? { ...item, status: nextStatus } : item,
           ),
         );
-        setNotice(
-          nextStatus === "closed"
-            ? `${donationItem.title} marked as picked up.`
-            : `${donationItem.title} is open again.`,
-        );
+        showToast({
+          tone: "Success",
+          title:
+            nextStatus === "closed"
+              ? `${donationItem.title} marked as picked up`
+              : `${donationItem.title} is open again`,
+        });
         setDonationItem(null);
         if (nextStatus === "closed") setTab("closed");
         if (nextStatus === "open") setTab("open");
@@ -559,13 +619,17 @@ export default function FoodPage() {
     setSelectedNotif(null);
     setComposing(false);
     setClaimHandoff(null);
-    setNotice(null);
+    dismissToast();
   }
+
+  const showCreate = loggedIn && screen === "donations" && donationVisible.length > 0 && !profileView && !composing;
+  const createButtonVisible = showCreate && !modalOverlay;
 
   const overlay = (
     <>
       {loggedIn ? modalOverlay : null}
       {showSplash ? <SplashScreen onComplete={() => setShowSplash(false)} /> : null}
+      <FoodToastViewport raised={createButtonVisible} />
     </>
   );
 
@@ -574,7 +638,7 @@ export default function FoodPage() {
       screen={screen}
       onScreen={switchScreen}
       notificationCount={unreadCount}
-      showCreate={loggedIn && screen === "donations" && donationVisible.length > 0 && !profileView && !composing}
+      showCreate={showCreate}
       onCreate={() => setComposing(true)}
       hideNav={!loggedIn || Boolean(profileView || composing)}
       hideBlobs={loggedIn && Boolean(profileView || composing)}
@@ -606,12 +670,19 @@ export default function FoodPage() {
           profile={profile}
           onClose={() => setProfileView(null)}
           onOpenData={() => setProfileView("data")}
+          onOpenAddress={() => setProfileView("address")}
           onOpenAllergies={() => setProfileView("allergies")}
           onPhotoChange={(photo) => setProfile((current) => ({ ...current, photo }))}
           onLogout={logout}
         />
       ) : profileView === "data" ? (
         <ProfileDataPage
+          profile={profile}
+          onBack={() => setProfileView("menu")}
+          onSave={(next) => setProfile((current) => ({ ...current, ...next }))}
+        />
+      ) : profileView === "address" ? (
+        <AddressPage
           profile={profile}
           onBack={() => setProfileView("menu")}
           onSave={(next) => setProfile((current) => ({ ...current, ...next }))}
@@ -627,10 +698,9 @@ export default function FoodPage() {
           items={nearbyVisible}
           query={query}
           searchOpen={searchOpen}
-          notice={notice}
           onToggleSearch={toggleSearch}
           onQuery={setQuery}
-          onOpen={setNearbyItem}
+          onOpen={handleOpenNearbyFood}
           onOpenProfile={() => setProfileView("menu")}
           displayName={profile.name}
         />
@@ -638,7 +708,6 @@ export default function FoodPage() {
         <DonationsView
           items={donationVisible}
           tab={tab}
-          notice={notice}
           onTab={setTab}
           onOpen={setDonationItem}
           onCreate={() => setComposing(true)}
@@ -648,7 +717,6 @@ export default function FoodPage() {
           items={notificationsVisible}
           filter={notifFilter}
           unreadCount={unreadCount}
-          notice={notice}
           onFilter={setNotifFilter}
           onMarkAllRead={markAllNotificationsRead}
           onOpen={(item) => {
@@ -665,7 +733,6 @@ function NearbyView({
   items,
   query,
   searchOpen,
-  notice,
   onToggleSearch,
   onQuery,
   onOpen,
@@ -675,7 +742,6 @@ function NearbyView({
   items: NearbyFood[];
   query: string;
   searchOpen: boolean;
-  notice: string | null;
   onToggleSearch: () => void;
   onQuery: (value: string) => void;
   onOpen: (item: NearbyFood) => void;
@@ -707,8 +773,6 @@ function NearbyView({
           <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
         </div>
 
-        {notice ? <Notice>{notice}</Notice> : null}
-
         {items.length === 0 ? (
           <Empty>No food nearby matches your search.</Empty>
         ) : (
@@ -722,14 +786,12 @@ function NearbyView({
 function DonationsView({
   items,
   tab,
-  notice,
   onTab,
   onOpen,
   onCreate,
 }: {
   items: Donation[];
   tab: DonationTab;
-  notice: string | null;
   onTab: (tab: DonationTab) => void;
   onOpen: (item: Donation) => void;
   onCreate?: () => void;
@@ -746,8 +808,6 @@ function DonationsView({
       <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
         <DonationTabs value={tab} onChange={onTab} />
 
-        {notice ? <Notice>{notice}</Notice> : null}
-
         {items.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", paddingBlock: 24 }}>
             <Empty>{emptyCopy}</Empty>
@@ -758,7 +818,7 @@ function DonationsView({
                 style={{
                   border: "none",
                   background: "var(--color-action-primary, #dc2b10)",
-                  color: "#fff",
+                  color: "var(--color-action-on-action)",
                   padding: "8px 16px",
                   borderRadius: "9999px",
                   fontSize: "13px",
@@ -782,7 +842,6 @@ function NotificationsView({
   items,
   filter,
   unreadCount,
-  notice,
   onFilter,
   onMarkAllRead,
   onOpen,
@@ -790,7 +849,6 @@ function NotificationsView({
   items: FoodNotification[];
   filter: "all" | "unread";
   unreadCount: number;
-  notice: string | null;
   onFilter: (filter: "all" | "unread") => void;
   onMarkAllRead: () => void;
   onOpen: (item: FoodNotification) => void;
@@ -835,8 +893,6 @@ function NotificationsView({
       </header>
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
-        {notice ? <Notice>{notice}</Notice> : null}
-
         {items.length === 0 ? (
           <Empty>{filter === "unread" ? "No unread notifications." : "No notifications."}</Empty>
         ) : (
@@ -857,7 +913,7 @@ function NotificationsView({
                   font: "inherit",
                   color: "inherit",
                   cursor: "pointer",
-                  background: "rgba(255, 255, 255, 0.45)",
+                  background: "var(--food-glass-strong-bg)",
                   border: "1px solid var(--color-border-subtle, #e6e7ed)",
                   borderRadius: "var(--radius-card, 16px)",
                   display: "flex",
@@ -966,7 +1022,7 @@ function SearchSlot(props: { open: boolean; query: string; onToggle: () => void;
         border: focused
           ? "var(--border-emphasis, 1.5px) solid var(--color-border-focus)"
           : "1px solid var(--color-border-subtle)",
-        background: "rgba(255, 255, 255, 0.72)",
+        background: "var(--food-field-glass-bg)",
         color: "var(--color-text-primary)",
         font: "inherit",
         fontSize: "var(--font-size-body-base)",
@@ -974,24 +1030,6 @@ function SearchSlot(props: { open: boolean; query: string; onToggle: () => void;
         boxSizing: "border-box",
       }}
     />
-  );
-}
-
-function Notice({ children }: { children: string }) {
-  return (
-    <p
-      role="status"
-      style={{
-        margin: 0,
-        padding: "12px 16px",
-        borderRadius: "var(--radius-card)",
-        background: "var(--color-background-brand-subtle)",
-        color: "var(--color-text-brand)",
-        fontSize: "var(--font-size-body-sm)",
-      }}
-    >
-      {children}
-    </p>
   );
 }
 

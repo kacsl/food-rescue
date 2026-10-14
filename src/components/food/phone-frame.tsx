@@ -40,8 +40,8 @@ export function PhoneFrame({
         <div className={gateBlobs ? "food-phone food-phone--gate" : "food-phone"}>
           {!hideBlobs && (
             <>
-              <img className="food-blob food-blob--bottom" src="/food/blob-bottom.svg" width={595} height={583.19} alt="" />
-              <img className="food-blob food-blob--top" src="/food/blob-top.svg" width={629} height={618} alt="" />
+              <span aria-hidden="true" className="food-blob food-blob--shape-bottom food-blob--bottom" />
+              <span aria-hidden="true" className="food-blob food-blob--shape-top food-blob--top" />
             </>
           )}
 

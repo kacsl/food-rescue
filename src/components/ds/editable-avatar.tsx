@@ -8,15 +8,15 @@ type EditableAvatarProps = {
   src?: string;
   size?: number;
   onPhotoChange: (dataUrl: string) => void;
+  onError: (message: string) => void;
 };
 
 /**
- * Avatar with a photo edit control.
+ * Avatar with a photo edit control. Upload failures are reported through `onError`.
  * valere-DS Avatar can show an image, but it has no edit action or file input.
  */
-export function EditableAvatar({ name, src, size = 96, onPhotoChange }: EditableAvatarProps) {
+export function EditableAvatar({ name, src, size = 96, onPhotoChange, onError }: EditableAvatarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState("");
   const [editState, setEditState] = useState<"Default" | "Hover" | "Active">("Default");
 
   function openPicker() {
@@ -28,21 +28,20 @@ export function EditableAvatar({ name, src, size = 96, onPhotoChange }: Editable
     event.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Choose an image file.");
+      onError("Choose an image file");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== "string") {
-        setError("Could not read that image.");
+        onError("Couldn't read that image");
         return;
       }
-      setError("");
       onPhotoChange(reader.result);
     };
     reader.onerror = () => {
-      setError("Could not read that image.");
+      onError("Couldn't read that image");
     };
     reader.readAsDataURL(file);
   }
@@ -103,9 +102,6 @@ export function EditableAvatar({ name, src, size = 96, onPhotoChange }: Editable
           style={{ display: "none" }}
         />
       </div>
-      {error ? (
-        <p style={{ margin: 0, fontSize: "var(--font-size-body-xs, 12px)", color: "var(--color-status-error-text, #9c1b12)" }}>{error}</p>
-      ) : null}
     </div>
   );
 }

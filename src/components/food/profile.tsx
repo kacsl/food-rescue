@@ -3,14 +3,19 @@ import { Button, IconButton } from "@/components/ds/button";
 import { Checkbox } from "@/components/ds/checkbox";
 import { Chip } from "@/components/ds/chip";
 import { EditableAvatar } from "@/components/ds/editable-avatar";
-import { SettingsRow } from "@/components/ds/settings-row";
+import { SettingsRow, SettingsSwitchRow } from "@/components/ds/settings-row";
 import { Stat } from "@/components/ds/stat";
-import { Toast } from "@/components/ds/toast";
+import { useTheme } from "@/lib/theme";
+import { useFoodToast } from "./food-toast";
 import {
+  ArrowLeftStartOnRectangleIcon,
   ChevronLeftIcon,
+  MapPinIcon,
+  MoonIcon,
   PencilIcon,
   ShieldCheckIcon,
   ShieldExclamationIcon,
+  SunIcon,
   UserCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -21,6 +26,9 @@ export type ProfileRecord = {
   email: string;
   password: string;
   photo?: string;
+  streetAddress?: string;
+  neighborhood?: string;
+  city?: string;
   allergies: string[];
   preferences: string[];
   hideMatchingAllergies: boolean;
@@ -31,6 +39,9 @@ export const INITIAL_PROFILE: ProfileRecord = {
   name: "Kari",
   email: "kari@example.com",
   password: "",
+  streetAddress: "Via das Margaridas, 123",
+  neighborhood: "Granja Viana",
+  city: "Cotia",
   allergies: [],
   preferences: [],
   hideMatchingAllergies: false,
@@ -52,6 +63,7 @@ export function ProfileMenu({
   profile,
   onClose,
   onOpenData,
+  onOpenAddress,
   onOpenAllergies,
   onPhotoChange,
   onLogout,
@@ -59,10 +71,13 @@ export function ProfileMenu({
   profile: ProfileRecord;
   onClose: () => void;
   onOpenData: () => void;
+  onOpenAddress?: () => void;
   onOpenAllergies: () => void;
   onPhotoChange: (photo: string) => void;
   onLogout: () => void;
 }) {
+  const { showToast } = useFoodToast();
+
   return (
     <div
       style={{
@@ -117,7 +132,16 @@ export function ProfileMenu({
               paddingRight: 16,
             }}
           >
-            <EditableAvatar name={profile.name} src={profile.photo} size={96} onPhotoChange={onPhotoChange} />
+            <EditableAvatar
+              name={profile.name}
+              src={profile.photo}
+              size={96}
+              onPhotoChange={(photo) => {
+                onPhotoChange(photo);
+                showToast({ tone: "Success", title: "Photo updated" });
+              }}
+              onError={(message) => showToast({ tone: "Error", title: message })}
+            />
 
             <div
               style={{
@@ -171,17 +195,36 @@ export function ProfileMenu({
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <SettingsRow icon={<UserCircleIcon width={22} height={22} strokeWidth={1.75} />} label="Profile data" onClick={onOpenData} />
+          <SettingsRow icon={<MapPinIcon width={22} height={22} strokeWidth={1.75} />} label="Address" onClick={() => onOpenAddress?.()} />
           <SettingsRow icon={<ShieldExclamationIcon width={22} height={22} strokeWidth={1.75} />} label="Allergies and preferences" onClick={onOpenAllergies} />
+          <ThemeRow />
         </div>
         <Button
           variant="Link secondary"
           size="SM"
           label="Log out"
+          leadingIcon
+          leadingIconSwap={<ArrowLeftStartOnRectangleIcon width={18} height={18} strokeWidth={1.75} aria-hidden="true" />}
           onClick={onLogout}
           style={{ alignSelf: "flex-start" }}
         />
       </section>
     </div>
+  );
+}
+
+function ThemeRow() {
+  const [theme, setTheme] = useTheme();
+  const isDark = theme === "dark";
+  const Icon = isDark ? MoonIcon : SunIcon;
+
+  return (
+    <SettingsSwitchRow
+      icon={<Icon width={22} height={22} strokeWidth={1.75} />}
+      label={isDark ? "Dark mode" : "Light mode"}
+      checked={isDark}
+      onChange={(checked) => setTheme(checked ? "dark" : "light")}
+    />
   );
 }
 
@@ -198,32 +241,27 @@ export function ProfileDataPage({
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [showToast, setShowToast] = useState(false);
+  const { showToast } = useFoodToast();
+
+  function validationError(nextName: string, nextEmail: string) {
+    if (!nextName) return "Add your name";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) return "Enter a valid email";
+    if (password && password.length < 8) return "Password must be at least 8 characters";
+    return null;
+  }
 
   function save() {
     const nextName = name.trim();
     const nextEmail = email.trim();
-    if (!nextName) {
-      setError("Add your name.");
-      setShowToast(false);
+    const error = validationError(nextName, nextEmail);
+    if (error) {
+      showToast({ tone: "Error", title: "Couldn't save your edits", body: error });
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
-      setError("Enter a valid email.");
-      setShowToast(false);
-      return;
-    }
-    if (password && password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      setShowToast(false);
-      return;
-    }
-    setError("");
     onSave({ name: nextName, email: nextEmail, password: password || profile.password });
     setPassword("");
     setIsEditing(false);
-    setShowToast(true);
+    showToast({ tone: "Success", title: "Edits successfully saved" });
   }
 
   return (
@@ -255,20 +293,14 @@ export function ProfileDataPage({
         <Field
           label="Name"
           value={name}
-          onChange={(val) => {
-            setShowToast(false);
-            setName(val);
-          }}
+          onChange={setName}
           autoComplete="name"
           disabled={!isEditing}
         />
         <Field
           label="Email"
           value={email}
-          onChange={(val) => {
-            setShowToast(false);
-            setEmail(val);
-          }}
+          onChange={setEmail}
           type="email"
           autoComplete="email"
           disabled={!isEditing}
@@ -276,32 +308,13 @@ export function ProfileDataPage({
         <Field
           label="Password"
           value={isEditing ? password : "••••••••"}
-          onChange={(val) => {
-            setShowToast(false);
-            setPassword(val);
-          }}
+          onChange={setPassword}
           type="password"
           autoComplete="new-password"
           placeholder="New password"
           disabled={!isEditing}
         />
-        {error ? (
-          <p style={{ margin: 0, color: "var(--color-text-error, #9c1b12)", fontSize: "var(--font-size-body-sm)" }}>
-            {error}
-          </p>
-        ) : null}
-
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
-          {showToast ? (
-            <Toast
-              tone="Success"
-              title="Edits successfully saved"
-              showBody={false}
-              showAction={false}
-              showClose
-              onClose={() => setShowToast(false)}
-            />
-          ) : null}
           {isEditing ? (
             <Button
               variant="Primary"
@@ -317,11 +330,107 @@ export function ProfileDataPage({
               label="Edit"
               leadingIcon
               leadingIconSwap={<PencilIcon width={16} height={16} strokeWidth={2} aria-hidden="true" />}
-              onClick={() => {
-                setShowToast(false);
-                setError("");
-                setIsEditing(true);
-              }}
+              onClick={() => setIsEditing(true)}
+              style={{ width: "100%" }}
+            />
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export function AddressPage({
+  profile,
+  onBack,
+  onSave,
+}: {
+  profile: ProfileRecord;
+  onBack: () => void;
+  onSave: (next: Pick<ProfileRecord, "streetAddress" | "neighborhood" | "city">) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [streetAddress, setStreetAddress] = useState(profile.streetAddress ?? "Via das Margaridas, 123");
+  const [neighborhood, setNeighborhood] = useState(profile.neighborhood ?? "Granja Viana");
+  const [city, setCity] = useState(profile.city ?? "Cotia");
+  const { showToast } = useFoodToast();
+
+  function save() {
+    const nextStreet = streetAddress.trim();
+    const nextNeighborhood = neighborhood.trim();
+    const nextCity = city.trim();
+    if (!nextStreet || !nextNeighborhood || !nextCity) {
+      showToast({ tone: "Error", title: "Couldn't save your address", body: "Fill in all address fields." });
+      return;
+    }
+    onSave({ streetAddress: nextStreet, neighborhood: nextNeighborhood, city: nextCity });
+    setIsEditing(false);
+    showToast({ tone: "Success", title: "Address saved" });
+  }
+
+  return (
+    <div
+      style={{
+        background: "var(--color-background-canvas, #ffffff)",
+        minHeight: "100%",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <PageHeader title="Address" onBack={onBack} />
+      <form
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          gap: "var(--space-stack-md, 16px)",
+          padding: "var(--space-inset-lg, 24px)",
+        }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (isEditing) {
+            save();
+          }
+        }}
+      >
+        <Field
+          label="Street address"
+          value={streetAddress}
+          onChange={setStreetAddress}
+          autoComplete="street-address"
+          disabled={!isEditing}
+        />
+        <Field
+          label="Neighborhood"
+          value={neighborhood}
+          onChange={setNeighborhood}
+          disabled={!isEditing}
+        />
+        <Field
+          label="City"
+          value={city}
+          onChange={setCity}
+          autoComplete="address-level2"
+          disabled={!isEditing}
+        />
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
+          {isEditing ? (
+            <Button
+              variant="Primary"
+              size="MD"
+              label="Save"
+              onClick={save}
+              style={{ width: "100%" }}
+            />
+          ) : (
+            <Button
+              variant="Primary"
+              size="MD"
+              label="Edit"
+              leadingIcon
+              leadingIconSwap={<PencilIcon width={16} height={16} strokeWidth={2} aria-hidden="true" />}
+              onClick={() => setIsEditing(true)}
               style={{ width: "100%" }}
             />
           )}
@@ -355,11 +464,10 @@ export function AllergiesPage({
     Boolean(profile.hideNonMatchingPreferences),
   );
   const [hoveredChip, setHoveredChip] = useState<string | null>(null);
-  const [showToast, setShowToast] = useState(false);
+  const { showToast } = useFoodToast();
 
   function toggleAllergen(name: string) {
     if (!isEditing) return;
-    setShowToast(false);
     if (name === "None") {
       setAllergies([]);
       return;
@@ -369,7 +477,6 @@ export function AllergiesPage({
 
   function togglePreference(name: string) {
     if (!isEditing) return;
-    setShowToast(false);
     setPreferences((prev) => (prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]));
   }
 
@@ -381,7 +488,7 @@ export function AllergiesPage({
       hideNonMatchingPreferences,
     });
     setIsEditing(false);
-    setShowToast(true);
+    showToast({ tone: "Success", title: "Preferences saved" });
   }
 
   return (
@@ -457,10 +564,7 @@ export function AllergiesPage({
                 size="MD"
                 label="Hide foods that contain my allergies"
                 showDescription={false}
-                onClick={() => {
-                  setShowToast(false);
-                  setHideMatchingAllergies((prev) => !prev);
-                }}
+                onClick={() => setHideMatchingAllergies((prev) => !prev)}
               />
             </>
           ) : (
@@ -542,10 +646,7 @@ export function AllergiesPage({
                 size="MD"
                 label="Hide food that doesn't meet my preferences"
                 showDescription={false}
-                onClick={() => {
-                  setShowToast(false);
-                  setHideNonMatchingPreferences((prev) => !prev);
-                }}
+                onClick={() => setHideNonMatchingPreferences((prev) => !prev)}
               />
             </>
           ) : (
@@ -575,16 +676,6 @@ export function AllergiesPage({
         </section>
 
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
-          {showToast ? (
-            <Toast
-              tone="Success"
-              title="Preferences saved"
-              showBody={false}
-              showAction={false}
-              showClose
-              onClose={() => setShowToast(false)}
-            />
-          ) : null}
           {isEditing ? (
             <Button
               variant="Primary"
@@ -600,10 +691,7 @@ export function AllergiesPage({
               label="Edit"
               leadingIcon
               leadingIconSwap={<PencilIcon width={16} height={16} strokeWidth={2} aria-hidden="true" />}
-              onClick={() => {
-                setShowToast(false);
-                setIsEditing(true);
-              }}
+              onClick={() => setIsEditing(true)}
               style={{ width: "100%" }}
             />
           )}

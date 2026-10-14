@@ -3,6 +3,7 @@ export function StatusBar() {
   return (
     <div
       aria-hidden="true"
+      className="food-status-bar"
       style={{
         display: "flex",
         alignItems: "center",
@@ -19,19 +20,18 @@ export function StatusBar() {
             fontSize: 17,
             fontWeight: 590,
             letterSpacing: "-0.5px",
-            color: "#36373e",
             lineHeight: "14px",
           }}
         >
           9:41
         </span>
-        <img src="/food/location.svg" width={14} height={14} alt="" />
+        <img className="food-status-bar__glyph" src="/food/location.svg" width={14} height={14} alt="" />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <img src="/food/signal.svg" width={20} height={14} alt="" />
-        <img src="/food/data.svg" width={19.2612} height={14} alt="" />
+        <img className="food-status-bar__glyph" src="/food/signal.svg" width={20} height={14} alt="" />
+        <img className="food-status-bar__glyph" src="/food/data.svg" width={19.2612} height={14} alt="" />
         <span style={{ position: "relative", width: 27, height: 14, display: "block" }}>
-          <img src="/food/battery.svg" width={27} height={14} alt="" />
+          <img className="food-status-bar__glyph" src="/food/battery.svg" width={27} height={14} alt="" />
           <img
             src="/food/battery-fill.svg"
             width={9.87925}
@@ -48,7 +48,6 @@ export function StatusBar() {
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: "-0.5px",
-              color: "#36373e",
               lineHeight: "14px",
             }}
           >

@@ -6,9 +6,9 @@ import { StatusBar } from "./status-bar";
 export interface SplashScreenProps {
   /** Called once the splash screen finishes its soft fade-out */
   onComplete?: () => void;
-  /** Total duration (ms) before fade-out begins. Default: 2000ms */
+  /** Total duration (ms) before fade-out begins. Default: 2400ms */
   holdDurationMs?: number;
-  /** Fade-out transition duration (ms). Default: 750ms */
+  /** Fade-out transition duration (ms). Default: 1000ms */
   fadeOutDurationMs?: number;
 }
 
@@ -101,19 +101,24 @@ const LEAF_STEM_PATH =
  */
 export function SplashScreen({
   onComplete,
-  holdDurationMs = 2000,
-  fadeOutDurationMs = 750,
+  holdDurationMs = 2400,
+  fadeOutDurationMs = 1000,
 }: SplashScreenProps) {
   const [fadingOut, setFadingOut] = useState(false);
+  const [exitMs, setExitMs] = useState(fadeOutDurationMs);
 
   useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nextExitMs = reduced ? 200 : fadeOutDurationMs;
+    setExitMs(nextExitMs);
+
     const fadeTimer = window.setTimeout(() => {
       setFadingOut(true);
     }, holdDurationMs);
 
     const doneTimer = window.setTimeout(() => {
       onComplete?.();
-    }, holdDurationMs + fadeOutDurationMs);
+    }, holdDurationMs + nextExitMs);
 
     return () => {
       window.clearTimeout(fadeTimer);
@@ -126,7 +131,7 @@ export function SplashScreen({
     setFadingOut(true);
     window.setTimeout(() => {
       onComplete?.();
-    }, 420);
+    }, exitMs);
   }
 
   return (
@@ -136,28 +141,14 @@ export function SplashScreen({
       role="region"
       aria-label="Food Rescue splash screen"
       style={{
-        transitionDuration: `${fadeOutDurationMs}ms`,
+        transitionDuration: `${exitMs}ms`,
       }}
     >
       {/* =====================================================================
           FIGMA BACKGROUND BLOBS (Nodes 44:4747 & 44:4748)
          ===================================================================== */}
-      <img
-        className="food-splash__blob food-splash__blob--top-left"
-        src="/food/blob-bottom.svg"
-        width={595}
-        height={583.19}
-        alt=""
-        aria-hidden="true"
-      />
-      <img
-        className="food-splash__blob food-splash__blob--bottom-right"
-        src="/food/blob-top.svg"
-        width={629}
-        height={618}
-        alt=""
-        aria-hidden="true"
-      />
+      <span aria-hidden="true" className="food-splash__blob food-blob--shape-bottom food-splash__blob--top-left" />
+      <span aria-hidden="true" className="food-splash__blob food-blob--shape-top food-splash__blob--bottom-right" />
 
       {/* =====================================================================
           STATUS BAR (Node 44:4749 / 44:4750)

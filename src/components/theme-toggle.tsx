@@ -1,7 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ds/button";
+import { useTheme } from "@/lib/theme";
 
 function SunIcon() {
   return (
@@ -27,60 +27,10 @@ function MoonIcon() {
   );
 }
 
-let listeners: (() => void)[] = [];
-
-function emitChange() {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribe(callback: () => void) {
-  listeners = [...listeners, callback];
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  const onMedia = () => {
-    if (!localStorage.getItem("theme")) {
-      const isDark = media.matches;
-      document.documentElement.classList.toggle("dark", isDark);
-      document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-      emitChange();
-    }
-  };
-  media.addEventListener("change", onMedia);
-
-  return () => {
-    listeners = listeners.filter((l) => l !== callback);
-    media.removeEventListener("change", onMedia);
-  };
-}
-
-function getSnapshot(): "light" | "dark" {
-  if (typeof document === "undefined") return "light";
-  return document.documentElement.classList.contains("dark") ? "dark" : "light";
-}
-
-function getServerSnapshot(): "light" | "dark" {
-  return "light";
-}
-
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  const toggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    if (next === "dark") {
-      document.documentElement.classList.add("dark");
-      document.documentElement.setAttribute("data-theme", "dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.setAttribute("data-theme", "light");
-      localStorage.setItem("theme", "light");
-    }
-    emitChange();
-  };
-
+  const [theme, setTheme] = useTheme();
   const isDark = theme === "dark";
+  const toggle = () => setTheme(isDark ? "light" : "dark");
 
   return (
     <Button
