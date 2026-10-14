@@ -86,6 +86,7 @@ function CheckOptionIcon() {
 export interface TimeListProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSelect"> {
   options?: readonly string[];
   selectedValue?: string;
+  selectedValues?: readonly string[];
   hoveredValue?: string;
   size?: TimePickerSize;
   maxVisibleItems?: number;
@@ -99,6 +100,7 @@ export interface TimeListProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 export function TimeList({
   options = FIGMA_TIME_SLOTS,
   selectedValue = "09:30",
+  selectedValues,
   hoveredValue,
   size = "MD",
   maxVisibleItems = 7,
@@ -122,6 +124,7 @@ export function TimeList({
     <div
       role="listbox"
       aria-label="Time options"
+      aria-multiselectable={selectedValues ? true : undefined}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -140,13 +143,16 @@ export function TimeList({
       {...props}
     >
       {options.map((slot) => {
-        const isSelected = slot === selectedValue;
+        const isSelected = selectedValues ? selectedValues.includes(slot) : slot === selectedValue;
+        const isAnchor = selectedValues
+          ? (selectedValues[0] ?? selectedValue) === slot
+          : slot === selectedValue;
         const isHovered = !isSelected && (slot === hoveredSlot || slot === hoveredValue);
 
         return (
           <button
             key={slot}
-            ref={isSelected ? selectedRef : undefined}
+            ref={isAnchor ? selectedRef : undefined}
             type="button"
             role="option"
             aria-selected={isSelected}

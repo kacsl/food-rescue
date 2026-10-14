@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Badge } from "valere-DS";
 import { Button, IconButton } from "@/components/ds/button";
+import { InputOtp } from "@/components/ds/input-otp";
 import type { Donation, NearbyFood } from "./cards";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
 import { useFoodToast } from "./food-toast";
@@ -10,7 +11,6 @@ import {
   ClockIcon,
   ShieldCheckIcon,
   MapPinIcon,
-  PhoneIcon,
 } from "@heroicons/react/24/outline";
 
 export { NewDonationSheet, OptionCard, type DonationPublishPayload };
@@ -236,10 +236,6 @@ export function NearbyDetail({
 
   function handleClaimClick() {
     if (!riskAcknowledged) return;
-    if (!isUserVerified) {
-      onNeedsVerification();
-      return;
-    }
     onClaim(selectedSlot);
   }
 
@@ -661,8 +657,8 @@ export function ClaimHandoffSheet({
 }
 
 /**
- * Flow 4: Phone Verification Flow (BRD Accountability)
- * Seamless 4-digit code confirmation for both posters and claimers.
+ * Flow 4: Phone Verification Bottom Sheet (BRD Accountability)
+ * Shown after publishing a listing when the donor has not verified their phone yet.
  */
 export function PhoneVerificationModal({
   onClose,
@@ -671,112 +667,52 @@ export function PhoneVerificationModal({
   onClose: () => void;
   onVerified: () => void;
 }) {
-  const [phone, setPhone] = useState("(11) 98765-4321");
   const [code, setCode] = useState("");
-  const [step, setStep] = useState<"phone" | "code">("phone");
   const [verifying, setVerifying] = useState(false);
 
-  function handleSendCode() {
-    if (!phone.trim()) return;
-    setStep("code");
-    setCode("4219"); // Demo prefilled helper for effortless flow
-  }
-
   function handleVerify() {
+    if (code.length < 6 || verifying) return;
     setVerifying(true);
     setTimeout(() => {
       setVerifying(false);
       onVerified();
-    }, 450);
+    }, 350);
   }
 
   return (
-    <Sheet title="Verify Your Phone" onClose={onClose}>
-      <div style={{ textAlign: "center", paddingBlock: 8 }}>
-        <div
+    <Sheet
+      gap={24}
+      title="Almost there!"
+      subtitle={
+        <p
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 9999,
-            background: "var(--color-background-muted, #f2f2f6)",
-            color: "var(--color-text-secondary)",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 10,
+            margin: 0,
+            fontSize: "var(--font-size-body-sm, 14px)",
+            fontWeight: "var(--font-weight-regular, 400)",
+            color: "var(--color-text-secondary, #5c5c63)",
           }}
         >
-          <PhoneIcon width={24} height={24} />
-        </div>
-        <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", fontWeight: 700 }}>
-          Neighborhood Accountability
-        </h3>
-        <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary)", lineHeight: 1.4 }}>
-          To keep our local food rescue safe and trustworthy, home cooks and claimers must verify their phone number.
+          Verify your phone number and enter the 6-digit code sent to your phone to publish your listing.
         </p>
-      </div>
+      }
+      onClose={onClose}
+    >
+      <InputOtp
+        value={code}
+        onChange={setCode}
+        length={6}
+        showSeparator
+        autoFocus
+      />
 
-      {step === "phone" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)" }}>
-              Mobile Phone Number
-            </span>
-            <input
-              autoFocus
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(11) 98765-4321"
-              style={{
-                height: 44,
-                paddingInline: 14,
-                borderRadius: "8px",
-                border: "var(--border-emphasis, 1.5px) solid var(--color-border-focus)",
-                outline: "none",
-                fontSize: "15px",
-                fontWeight: 600,
-              }}
-            />
-          </label>
-          <Button variant="Primary" size="MD" label="Send 4-Digit Code" onClick={handleSendCode} style={{ width: "100%" }} />
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)" }}>
-              Enter 4-digit code sent to {phone}
-            </span>
-            <input
-              autoFocus
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              maxLength={4}
-              placeholder="4219"
-              style={{
-                height: 48,
-                textAlign: "center",
-                letterSpacing: "8px",
-                borderRadius: "8px",
-                border: "var(--border-emphasis, 1.5px) solid var(--color-border-focus)",
-                outline: "none",
-                fontSize: "22px",
-                fontWeight: 700,
-              }}
-            />
-          </label>
-          <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", textAlign: "center" }}>
-            Demo helper: 4219 is auto-filled for testing
-          </div>
-          <Button
-            variant="Primary"
-            size="MD"
-            disabled={verifying || code.length < 4}
-            label={verifying ? "Verifying..." : "Verify & Complete"}
-            onClick={handleVerify}
-            style={{ width: "100%" }}
-          />
-        </div>
-      )}
+      <Button
+        variant="Primary"
+        size="LG"
+        disabled={verifying || code.length < 6}
+        label={verifying ? "Verifying..." : "Verify phone"}
+        onClick={handleVerify}
+        style={{ width: "100%", flexShrink: 0 }}
+      />
     </Sheet>
   );
 }

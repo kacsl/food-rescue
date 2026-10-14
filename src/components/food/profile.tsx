@@ -10,6 +10,8 @@ import { useFoodToast } from "./food-toast";
 import {
   ArrowLeftStartOnRectangleIcon,
   ChevronLeftIcon,
+  EyeIcon,
+  EyeSlashIcon,
   MapPinIcon,
   MoonIcon,
   PencilIcon,
@@ -24,11 +26,13 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 export type ProfileRecord = {
   name: string;
   email: string;
+  phone?: string;
   password: string;
   photo?: string;
   streetAddress?: string;
   neighborhood?: string;
   city?: string;
+  zipCode?: string;
   allergies: string[];
   preferences: string[];
   hideMatchingAllergies: boolean;
@@ -38,10 +42,12 @@ export type ProfileRecord = {
 export const INITIAL_PROFILE: ProfileRecord = {
   name: "Kari",
   email: "kari@example.com",
-  password: "",
+  phone: "+55 (11) 98877-6655",
+  password: "password123",
   streetAddress: "Via das Margaridas, 123",
   neighborhood: "Granja Viana",
   city: "Cotia",
+  zipCode: "06709-015",
   allergies: [],
   preferences: [],
   hideMatchingAllergies: false,
@@ -235,17 +241,19 @@ export function ProfileDataPage({
 }: {
   profile: ProfileRecord;
   onBack: () => void;
-  onSave: (next: Pick<ProfileRecord, "name" | "email" | "password">) => void;
+  onSave: (next: Pick<ProfileRecord, "name" | "email" | "phone" | "password">) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState(profile.phone ?? "+55 (11) 98877-6655");
+  const [password, setPassword] = useState(profile.password || "password123");
   const { showToast } = useFoodToast();
 
-  function validationError(nextName: string, nextEmail: string) {
+  function validationError(nextName: string, nextEmail: string, nextPhone: string) {
     if (!nextName) return "Add your name";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) return "Enter a valid email";
+    if (!nextPhone) return "Enter a valid phone number";
     if (password && password.length < 8) return "Password must be at least 8 characters";
     return null;
   }
@@ -253,13 +261,13 @@ export function ProfileDataPage({
   function save() {
     const nextName = name.trim();
     const nextEmail = email.trim();
-    const error = validationError(nextName, nextEmail);
+    const nextPhone = phone.trim();
+    const error = validationError(nextName, nextEmail, nextPhone);
     if (error) {
       showToast({ tone: "Error", title: "Couldn't save your edits", body: error });
       return;
     }
-    onSave({ name: nextName, email: nextEmail, password: password || profile.password });
-    setPassword("");
+    onSave({ name: nextName, email: nextEmail, phone: nextPhone, password: password || profile.password });
     setIsEditing(false);
     showToast({ tone: "Success", title: "Edits successfully saved" });
   }
@@ -306,8 +314,16 @@ export function ProfileDataPage({
           disabled={!isEditing}
         />
         <Field
+          label="Phone number"
+          value={phone}
+          onChange={setPhone}
+          type="tel"
+          autoComplete="tel"
+          disabled={!isEditing}
+        />
+        <Field
           label="Password"
-          value={isEditing ? password : "••••••••"}
+          value={password}
           onChange={setPassword}
           type="password"
           autoComplete="new-password"
@@ -347,23 +363,25 @@ export function AddressPage({
 }: {
   profile: ProfileRecord;
   onBack: () => void;
-  onSave: (next: Pick<ProfileRecord, "streetAddress" | "neighborhood" | "city">) => void;
+  onSave: (next: Pick<ProfileRecord, "streetAddress" | "neighborhood" | "city" | "zipCode">) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [streetAddress, setStreetAddress] = useState(profile.streetAddress ?? "Via das Margaridas, 123");
   const [neighborhood, setNeighborhood] = useState(profile.neighborhood ?? "Granja Viana");
   const [city, setCity] = useState(profile.city ?? "Cotia");
+  const [zipCode, setZipCode] = useState(profile.zipCode ?? "06709-015");
   const { showToast } = useFoodToast();
 
   function save() {
     const nextStreet = streetAddress.trim();
     const nextNeighborhood = neighborhood.trim();
     const nextCity = city.trim();
-    if (!nextStreet || !nextNeighborhood || !nextCity) {
+    const nextZip = zipCode.trim();
+    if (!nextStreet || !nextNeighborhood || !nextCity || !nextZip) {
       showToast({ tone: "Error", title: "Couldn't save your address", body: "Fill in all address fields." });
       return;
     }
-    onSave({ streetAddress: nextStreet, neighborhood: nextNeighborhood, city: nextCity });
+    onSave({ streetAddress: nextStreet, neighborhood: nextNeighborhood, city: nextCity, zipCode: nextZip });
     setIsEditing(false);
     showToast({ tone: "Success", title: "Address saved" });
   }
@@ -412,6 +430,13 @@ export function AddressPage({
           value={city}
           onChange={setCity}
           autoComplete="address-level2"
+          disabled={!isEditing}
+        />
+        <Field
+          label="Zip code"
+          value={zipCode}
+          onChange={setZipCode}
+          autoComplete="postal-code"
           disabled={!isEditing}
         />
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
@@ -735,35 +760,74 @@ function Field({
   disabled?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const resolvedType = isPassword ? (showPassword ? "text" : "password") : type;
 
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <span style={{ fontSize: "var(--font-size-body-sm)", fontWeight: 600 }}>{label}</span>
-      <input
-        type={type}
-        value={value}
-        disabled={disabled}
-        autoComplete={autoComplete}
-        placeholder={placeholder}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        onChange={(event) => onChange(event.target.value)}
-        style={{
-          height: 44,
-          paddingInline: 14,
-          borderRadius: "var(--radius-control, 8px)",
-          border:
-            focused && !disabled
-              ? "var(--border-emphasis, 1.5px) solid var(--color-border-focus)"
-              : "1px solid var(--color-border-subtle)",
-          outline: "none",
-          background: disabled ? "var(--color-background-subtle, #f8f9fc)" : "var(--color-background-surface, #ffffff)",
-          font: "inherit",
-          fontSize: "var(--font-size-body-base)",
-          color: disabled ? "var(--color-text-disabled, #b4b5bd)" : "var(--color-text-primary)",
-          cursor: disabled ? "not-allowed" : "text",
-        }}
-      />
+      <div style={{ position: "relative", display: "flex", alignItems: "center", width: "100%" }}>
+        <input
+          type={resolvedType}
+          value={value}
+          disabled={disabled}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(event) => onChange(event.target.value)}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            height: 44,
+            paddingLeft: 14,
+            paddingRight: isPassword ? 42 : 14,
+            borderRadius: "var(--radius-control, 8px)",
+            border:
+              focused && !disabled
+                ? "var(--border-emphasis, 1.5px) solid var(--color-border-focus)"
+                : "1px solid var(--color-border-subtle)",
+            outline: "none",
+            background: disabled ? "var(--color-background-subtle, #f8f9fc)" : "var(--color-background-surface, #ffffff)",
+            font: "inherit",
+            fontSize: "var(--font-size-body-base)",
+            color: disabled ? "var(--color-text-disabled, #b4b5bd)" : "var(--color-text-primary)",
+            cursor: disabled ? "not-allowed" : "text",
+          }}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            onClick={(event) => {
+              event.preventDefault();
+              setShowPassword((prev) => !prev);
+            }}
+            style={{
+              position: "absolute",
+              right: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              padding: 0,
+              border: "none",
+              background: "transparent",
+              color: "var(--color-icon-muted, #75757d)",
+              cursor: "pointer",
+              borderRadius: "var(--radius-pill, 9999px)",
+            }}
+          >
+            {showPassword ? (
+              <EyeSlashIcon width={18} height={18} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <EyeIcon width={18} height={18} strokeWidth={1.75} aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
+      </div>
     </label>
   );
 }

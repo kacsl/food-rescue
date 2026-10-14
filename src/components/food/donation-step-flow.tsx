@@ -25,6 +25,7 @@ export type DonationPublishPayload = {
   allergens: string[];
   pickupType: "immediate" | "scheduled";
   slotLabel: string;
+  slotLabels?: string[];
 };
 
 type FoodCategory = "meal" | "pantry";
@@ -274,6 +275,11 @@ function formatPickupSlot(date: string, time: string) {
   return `${formatted}, ${time}`;
 }
 
+function formatPickupSlots(date: string, times: string[]) {
+  if (times.length === 0) return "";
+  return times.map((time) => formatPickupSlot(date, time)).join(" • ");
+}
+
 function StepAlert({ children }: { children: ReactNode }) {
   return (
     <div
@@ -379,8 +385,15 @@ export function NewDonationSheet({
   // Step 5: Pickup timing (Pre-selected default: immediate pickup per MVP metric)
   const [pickupType, setPickupType] = useState<PickupChoice>("immediate");
   const [pickupDate, setPickupDate] = useState<string>("");
-  const [pickupTime, setPickupTime] = useState<string>("");
+  const [pickupTimes, setPickupTimes] = useState<string[]>([]);
   const [activePickerSheet, setActivePickerSheet] = useState<ActivePickerSheet>(null);
+
+  function togglePickupTime(time: string) {
+    setPickupTimes((prev) => {
+      const next = prev.includes(time) ? prev.filter((item) => item !== time) : [...prev, time];
+      return [...next].sort();
+    });
+  }
 
   // Step 6: Title
   const [title, setTitle] = useState<string>("");
@@ -479,7 +492,7 @@ export function NewDonationSheet({
     }
     if (currentStep === 5) {
       if (pickupType === "immediate") return true;
-      return pickupDate.trim().length > 0 && pickupTime.trim().length > 0;
+      return pickupDate.trim().length > 0 && pickupTimes.length > 0;
     }
     if (currentStep === 6) {
       return title.trim().length > 0;
@@ -547,11 +560,8 @@ export function NewDonationSheet({
   }
 
   function handlePublish() {
-    if (!isUserVerified) {
-      onNeedsVerification();
-      return;
-    }
     const { foodAge, preparedDaysAgo, expirationInfo } = computeFoodAgeSummary();
+    const formattedSlots = pickupTimes.map((time) => formatPickupSlot(pickupDate, time));
     onPublish({
       title: title.trim(),
       image: photoUrl || undefined,
@@ -562,7 +572,11 @@ export function NewDonationSheet({
       expirationInfo,
       allergens: allergenChoice === "contains" ? allergens : [],
       pickupType,
-      slotLabel: pickupType === "immediate" ? "Immediate (Next 60 min)" : formatPickupSlot(pickupDate, pickupTime),
+      slotLabel:
+        pickupType === "immediate"
+          ? "Immediate (Next 60 min)"
+          : formatPickupSlots(pickupDate, pickupTimes),
+      slotLabels: pickupType === "scheduled" ? formattedSlots : undefined,
     });
   }
 
@@ -908,7 +922,7 @@ export function NewDonationSheet({
             />
             <OptionCard
               label="Scheduled time window"
-              description="Offer a specific time window today."
+              description="Offer one or more time slots for pickup."
               selected={pickupType === "scheduled"}
               onClick={() => setPickupType("scheduled")}
             />
@@ -924,11 +938,34 @@ export function NewDonationSheet({
                 />
                 <PickerField
                   type="time"
-                  label="Pickup time"
-                  value={pickupTime}
+                  label="Pickup time slots"
+                  value={pickupTimes.join(", ")}
                   isOpen={activePickerSheet === "pickup-time"}
                   onOpen={() => setActivePickerSheet("pickup-time")}
                 />
+                {pickupTimes.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-inline-sm, 8px)" }}>
+                    {pickupTimes.map((slotTime) => {
+                      const chipKey = `pickup-slot-${slotTime}`;
+                      const hovered = hoveredChip === chipKey;
+                      return (
+                        <div
+                          key={slotTime}
+                          onMouseEnter={() => setHoveredChip(chipKey)}
+                          onMouseLeave={() => setHoveredChip((current) => (current === chipKey ? null : current))}
+                        >
+                          <Chip
+                            label={slotTime}
+                            selected="True"
+                            state={hovered ? "Hover" : "Default"}
+                            showRemove
+                            onClick={() => togglePickupTime(slotTime)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -1084,7 +1121,7 @@ export function NewDonationSheet({
             />
             <ReviewRow
               label="Pickup timing"
-              value={pickupType === "immediate" ? "Right now (next 60 min)" : formatPickupSlot(pickupDate, pickupTime)}
+              value={pickupType === "immediate" ? "Right now (next 60 min)" : formatPickupSlots(pickupDate, pickupTimes)}
               onEdit={() => jumpToStep(5)}
             />
             <ReviewRow
@@ -1327,7 +1364,7 @@ export function NewDonationSheet({
                   ? "Printed expiration date"
                   : activePickerSheet === "pickup-date"
                     ? "Pickup date"
-                    : "Pickup time"}
+                    : "Pickup time slots"}
               </h2>
               <IconButton
                 variant="Ghost"
@@ -1366,20 +1403,27 @@ export function NewDonationSheet({
                 }}
               />
             ) : (
-              <TimeList
-                options={generateQuarterHourSlots(6, 23)}
-                selectedValue={pickupTime || "09:30"}
-                maxVisibleItems={6}
-                onSelect={(selectedTime) => {
-                  setPickupTime(selectedTime);
-                  setActivePickerSheet(null);
-                }}
-                style={{
-                  border: "none",
-                  boxShadow: "none",
-                  paddingBlock: 0,
-                }}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-md, 16px)" }}>
+                <TimeList
+                  options={generateQuarterHourSlots(6, 23)}
+                  selectedValue={pickupTimes[0] || "09:30"}
+                  selectedValues={pickupTimes}
+                  maxVisibleItems={6}
+                  onSelect={togglePickupTime}
+                  style={{
+                    border: "none",
+                    boxShadow: "none",
+                    paddingBlock: 0,
+                  }}
+                />
+                <Button
+                  variant="Primary"
+                  size="MD"
+                  label={pickupTimes.length > 0 ? `Done (${pickupTimes.length} selected)` : "Done"}
+                  onClick={() => setActivePickerSheet(null)}
+                  style={{ width: "100%" }}
+                />
+              </div>
             )}
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Separator } from "valere-DS";
 import { Button, IconButton } from "@/components/ds/button";
 import { Logo } from "@/components/ds/logo";
-import { ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import {
   hasErrors,
   nameFromEmail,
@@ -228,31 +228,71 @@ function AuthField({
   error?: string;
   onChange: (value: string) => void;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const resolvedType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
     <label className="food-auth-field" htmlFor={id} style={{ display: "flex", flexDirection: "column", gap: "var(--space-stack-sm)", width: "100%" }}>
       <span style={{ fontSize: "var(--font-size-body-sm)", fontWeight: "var(--font-weight-semibold)", color: "var(--color-text-primary)" }}>
         {label}
         <span style={{ color: "var(--color-status-error-text)" }}> *</span>
       </span>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        autoComplete={autoComplete}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        onChange={(event) => onChange(event.target.value)}
-        style={{
-          height: "var(--size-control-md)",
-          paddingInline: "var(--space-inset-md)",
-          borderRadius: "var(--radius-control)",
-          border: "var(--border-hairline) solid var(--color-border-default)",
-          background: "var(--color-background-surface)",
-          color: "var(--color-text-primary)",
-          font: "inherit",
-          fontSize: "var(--font-size-body-sm)",
-        }}
-      />
+      <div style={{ position: "relative", display: "flex", alignItems: "center", width: "100%" }}>
+        <input
+          id={id}
+          type={resolvedType}
+          value={value}
+          autoComplete={autoComplete}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          onChange={(event) => onChange(event.target.value)}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            height: "var(--size-control-md)",
+            paddingLeft: "var(--space-inset-md)",
+            paddingRight: isPassword ? 42 : "var(--space-inset-md)",
+            borderRadius: "var(--radius-control)",
+            border: "var(--border-hairline) solid var(--color-border-default)",
+            background: "var(--color-background-surface)",
+            color: "var(--color-text-primary)",
+            font: "inherit",
+            fontSize: "var(--font-size-body-sm)",
+          }}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            onClick={(event) => {
+              event.preventDefault();
+              setShowPassword((prev) => !prev);
+            }}
+            style={{
+              position: "absolute",
+              right: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              padding: 0,
+              border: "none",
+              background: "transparent",
+              color: "var(--color-icon-muted, #75757d)",
+              cursor: "pointer",
+              borderRadius: "var(--radius-pill, 9999px)",
+            }}
+          >
+            {showPassword ? (
+              <EyeSlashIcon width={18} height={18} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <EyeIcon width={18} height={18} strokeWidth={1.75} aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
+      </div>
       {error ? (
         <span id={`${id}-error`} style={{ fontSize: "var(--font-size-body-xs)", color: "var(--color-status-error-text)" }}>
           {error}

@@ -243,7 +243,7 @@ function FoodApp() {
   const [claimHandoff, setClaimHandoff] = useState<{ food: NearbyFood; slot: string; mode: ClaimSheetMode } | null>(null);
 
   // Phone Verification State (BRD Requirement)
-  const [isUserVerified, setIsUserVerified] = useState(true);
+  const [isUserVerified, setIsUserVerified] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [pendingVerificationAction, setPendingVerificationAction] = useState<(() => void) | null>(null);
 
@@ -457,9 +457,18 @@ function FoodApp() {
     allergens: string[];
     pickupType: "immediate" | "scheduled";
     slotLabel: string;
+    slotLabels?: string[];
   }) {
     const newId = `donation-${Date.now()}`;
     const listingImage = data.image || "/food/eggs.png";
+    const resolvedSlots =
+      data.pickupType === "scheduled"
+        ? (data.slotLabels && data.slotLabels.length > 0 ? data.slotLabels : [data.slotLabel]).map((label, index) => ({
+            id: `slot-new-${index + 1}`,
+            label,
+          }))
+        : undefined;
+
     const newDonation: Donation = {
       id: newId,
       title: data.title,
@@ -467,7 +476,7 @@ function FoodApp() {
       status: "open",
       interested: 0,
       claimStatus: "unclaimed",
-      timeLeft: data.pickupType === "immediate" ? "60m left" : "Today 6:00 PM",
+      timeLeft: data.pickupType === "immediate" ? "60m left" : resolvedSlots?.[0]?.label ?? "Today 6:00 PM",
       foodAge: data.foodAge,
       keptRefrigerated: data.keptRefrigerated,
       allergens: data.allergens,
@@ -493,7 +502,7 @@ function FoodApp() {
       allergens: data.allergens,
       address: "Rua das Acácias, 142, Apt 4B - Granja Viana",
       pickupType: data.pickupType,
-      slots: data.pickupType === "scheduled" ? [{ id: "slot-new", label: data.slotLabel }] : undefined,
+      slots: resolvedSlots,
       status: "available",
     };
 
@@ -515,6 +524,10 @@ function FoodApp() {
 
     setComposing(false);
     setTab("open");
+    if (!isUserVerified) {
+      setShowPhoneModal(true);
+      return;
+    }
     showToast({ tone: "Success", title: `${data.title} is live`, body: "Neighbors nearby can claim it now." });
   }
 
@@ -619,6 +632,8 @@ function FoodApp() {
     setSelectedNotif(null);
     setComposing(false);
     setClaimHandoff(null);
+    setIsUserVerified(false);
+    setShowPhoneModal(false);
     dismissToast();
   }
 
