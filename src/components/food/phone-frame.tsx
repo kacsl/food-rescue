@@ -1,8 +1,46 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, type ReactNode } from "react";
 import { BottomNav } from "@/components/ds/bottom-nav";
 import { IconButton } from "valere-DS";
 import { StatusBar } from "./status-bar";
 import "./food-phone.css";
+
+const MOBILE_FRAME_QUERY = "(pointer: coarse) and (max-width: 1024px)";
+
+/** Keeps the mobile shell inside the visible viewport, above Safari's bottom search bar. */
+function useMobileVisualViewport() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const query = window.matchMedia(MOBILE_FRAME_QUERY);
+
+    function update() {
+      if (!query.matches) {
+        root.style.removeProperty("--food-vvh");
+        root.style.removeProperty("--food-vv-top");
+        return;
+      }
+      const viewport = window.visualViewport;
+      root.style.setProperty("--food-vvh", `${viewport?.height ?? window.innerHeight}px`);
+      root.style.setProperty("--food-vv-top", `${viewport?.offsetTop ?? 0}px`);
+    }
+
+    update();
+    query.addEventListener("change", update);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      query.removeEventListener("change", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      window.removeEventListener("orientationchange", update);
+      root.style.removeProperty("--food-vvh");
+      root.style.removeProperty("--food-vv-top");
+    };
+  }, []);
+}
 
 export type FoodScreen = "nearby" | "donations" | "notifications";
 
@@ -34,6 +72,8 @@ export function PhoneFrame({
   overlay,
   children,
 }: PhoneFrameProps) {
+  useMobileVisualViewport();
+
   return (
     <div className="food-stage">
       <div className="food-scaler">
@@ -48,7 +88,7 @@ export function PhoneFrame({
           <div
             className="food-phone__scroll"
             style={{
-              paddingBottom: hideNav ? 0 : 120,
+              paddingBottom: hideNav ? 0 : "calc(120px + env(safe-area-inset-bottom, 0px))",
               background: hideBlobs ? "var(--color-background-canvas, #ffffff)" : "transparent",
             }}
           >

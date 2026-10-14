@@ -34,8 +34,9 @@
 .food-scaler {
   container-type: size;
   position: relative;
-  width: min(393px, 100cqi);
-  height: calc(min(393px, 100cqi) * 852 / 393);
+  width: min(393px, 100cqi, calc((100dvh - 48px) * 393 / 852));
+  aspect-ratio: 393 / 852;
+  height: auto;
   flex-shrink: 0;
 }
 
@@ -73,7 +74,7 @@
   position: absolute;
   z-index: 3;
   left: 50%;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -611,6 +612,73 @@
     animation: none;
     opacity: 1;
     transform: translate(-50%, -50%);
+  }
+}
+
+/* Phones fill the visible viewport. Desktop keeps the 393px phone frame. */
+@media (pointer: coarse) and (max-width: 1024px) {
+  html:has(.food-stage),
+  body:has(.food-stage) {
+    overflow: hidden;
+    height: 100%;
+    background: var(--color-background-canvas);
+  }
+
+  .food-stage {
+    position: fixed;
+    top: var(--food-vv-top, 0px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: var(--food-vvh, 100dvh);
+    min-height: 0;
+    padding: 0;
+    align-items: stretch;
+    justify-content: flex-start;
+    background: var(--color-background-canvas);
+  }
+
+  .food-scaler {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .food-phone {
+    width: 100%;
+    height: 100%;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .food-status-bar,
+  .food-splash__status-bar {
+    display: none !important;
+  }
+
+  .food-splash {
+    width: 100%;
+    height: 100%;
+  }
+
+  .food-phone__scroll {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .food-phone__nav {
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .food-phone__fab {
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .food-toast-viewport {
+    bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .food-toast-viewport--raised {
+    bottom: calc(176px + env(safe-area-inset-bottom, 0px));
   }
 }
 
