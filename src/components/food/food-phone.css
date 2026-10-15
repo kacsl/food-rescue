@@ -130,6 +130,28 @@
 
 .food-status-bar {
   color: var(--food-status-color);
+  background: transparent;
+}
+
+/* Desktop phone frame: status bar floats over auth hero (Figma 83:13757). */
+@media not ((pointer: coarse) and (max-width: 1024px)) {
+  .food-phone__scroll:has(.food-auth-home) {
+    position: relative;
+  }
+
+  .food-phone__scroll:has(.food-auth-home) > .food-status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 393px;
+    z-index: 4;
+    background: transparent;
+  }
+
+  .food-phone__scroll:has(.food-auth-home) > .food-page-view {
+    flex: 1;
+    min-height: 100%;
+  }
 }
 
 .food-status-bar__glyph {
@@ -175,6 +197,29 @@
   --food-auth-separator: var(--color-border-default);
 }
 
+/* Figma BR soft blurs (83:13758, 83:13759) */
+.food-auth-home__gradient {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.food-auth-home__gradient--top {
+  top: -9px;
+  left: -64px;
+  width: 595px;
+  height: 583px;
+}
+
+.food-auth-home__gradient--bottom {
+  top: 293px;
+  left: 56px;
+  width: 595px;
+  height: 583px;
+}
+
 .food-auth-home__doodles {
   position: absolute;
   left: -386px;
@@ -185,6 +230,7 @@
   opacity: 0.5;
   pointer-events: none;
   user-select: none;
+  z-index: 1;
 }
 
 .food-auth-home__logo {
@@ -209,6 +255,42 @@
   padding: 28px 24px 24px;
   border-radius: 28px 28px 0 0;
   background: var(--food-auth-panel-bg);
+  box-shadow:
+    0 0 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.08);
+  transform: translate3d(0, 100%, 0);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.food-auth-home--reveal .food-auth-home__panel {
+  animation: foodAuthPanelRise 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.food-auth-home--reveal .food-auth-home__logo {
+  animation: foodAuthLogoSettle 900ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+
+@keyframes foodAuthPanelRise {
+  0% {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes foodAuthLogoSettle {
+  0% {
+    opacity: 0.72;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .food-auth-home__heading {
@@ -236,6 +318,14 @@
   min-height: 56px;
   font-size: 18px;
   line-height: 24px;
+}
+
+.food-auth-home__google.evolve-button {
+  justify-content: center;
+}
+
+.food-auth-home__google.evolve-button > span:last-child {
+  flex: 0 1 auto;
 }
 
 .food-auth-home__login.evolve-button {
@@ -293,6 +383,10 @@
   flex-direction: column;
   animation: foodPageFade 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: opacity, transform;
+}
+
+.food-page-view:has(.food-auth-home) {
+  animation: none;
 }
 
 /* =========================================================================
@@ -622,8 +716,8 @@
 
 .food-splash--fading-out {
   opacity: 0;
-  transform: scale(1.018);
-  filter: blur(2px);
+  transform: scale(1.006);
+  filter: blur(0.75px);
   pointer-events: none;
 }
 
@@ -722,6 +816,16 @@
     animation: none;
     opacity: 1;
     transform: translate(-50%, -50%);
+  }
+
+  .food-auth-home__panel {
+    transform: none;
+    opacity: 1;
+  }
+
+  .food-auth-home--reveal .food-auth-home__panel,
+  .food-auth-home--reveal .food-auth-home__logo {
+    animation: none;
   }
 }
 

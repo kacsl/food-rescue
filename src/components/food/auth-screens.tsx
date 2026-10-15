@@ -17,6 +17,8 @@ type HomeProps = {
   onCreateAccount: () => void;
   onGoogle: () => void;
   onLogIn: () => void;
+  /** When true, the welcome panel slides up (synced with splash fade-out). */
+  revealPanel?: boolean;
 };
 
 const authGoogleButtonStyle: CSSProperties = {
@@ -47,9 +49,25 @@ type FormProps = {
   onSuccess: (session: FoodSession) => void;
 };
 
-export function LoggedOutHome({ onCreateAccount, onGoogle, onLogIn }: HomeProps) {
+export function LoggedOutHome({ onCreateAccount, onGoogle, onLogIn, revealPanel = true }: HomeProps) {
   return (
-    <div className="food-auth-home">
+    <div className={["food-auth-home", revealPanel ? "food-auth-home--reveal" : ""].filter(Boolean).join(" ")}>
+      <img
+        className="food-auth-home__gradient food-auth-home__gradient--top"
+        src="/food/auth/blob-br-top.svg"
+        alt=""
+        aria-hidden="true"
+        width={595}
+        height={583}
+      />
+      <img
+        className="food-auth-home__gradient food-auth-home__gradient--bottom"
+        src="/food/auth/blob-br-bottom.svg"
+        alt=""
+        aria-hidden="true"
+        width={595}
+        height={583}
+      />
       <img
         className="food-auth-home__doodles"
         src="/food/auth/food-doodles.svg"
@@ -85,6 +103,10 @@ export function LoggedOutHome({ onCreateAccount, onGoogle, onLogIn }: HomeProps)
             size="LG"
             label="Continue with Google"
             onClick={onGoogle}
+            leadingIcon
+            leadingIconSwap={
+              <img src="/food/auth/google-g.png" width={16} height={16} alt="" aria-hidden="true" />
+            }
             className="food-auth-home__cta food-auth-home__google"
             style={authGoogleButtonStyle}
           />

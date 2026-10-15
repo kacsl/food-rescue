@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Chip } from "valere-DS";
 import { KariAvatar } from "@/components/ds/avatar";
 import {
@@ -224,6 +224,13 @@ export default function FoodPage() {
 function FoodApp() {
   const { showToast, dismissToast } = useFoodToast();
   const [showSplash, setShowSplash] = useState(true);
+  const [splashRevealing, setSplashRevealing] = useState(false);
+
+  const handleSplashFadeStart = useCallback(() => setSplashRevealing(true), []);
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+    setSplashRevealing(false);
+  }, []);
   const [screen, setScreen] = useState<FoodScreen>("nearby");
   const [tab, setTab] = useState<DonationTab>("open");
   const [notifFilter, setNotifFilter] = useState<"all" | "unread">("all");
@@ -643,7 +650,9 @@ function FoodApp() {
   const overlay = (
     <>
       {loggedIn ? modalOverlay : null}
-      {showSplash ? <SplashScreen onComplete={() => setShowSplash(false)} /> : null}
+      {showSplash ? (
+        <SplashScreen onFadeStart={handleSplashFadeStart} onComplete={handleSplashComplete} />
+      ) : null}
       <FoodToastViewport raised={createButtonVisible} />
     </>
   );
@@ -656,8 +665,10 @@ function FoodApp() {
       showCreate={showCreate}
       onCreate={() => setComposing(true)}
       hideNav={!loggedIn || Boolean(profileView || composing)}
-      hideBlobs={loggedIn && Boolean(profileView || composing)}
-      gateBlobs={!loggedIn}
+      hideBlobs={
+        (!loggedIn && authView === "home") || (loggedIn && Boolean(profileView || composing))
+      }
+      gateBlobs={!loggedIn && authView !== "home"}
       contentKey={loggedIn ? screen : authView}
       overlay={overlay}
     >
@@ -668,6 +679,7 @@ function FoodApp() {
           <SignUpScreen onBack={() => setAuthView("home")} onSwitch={() => setAuthView("login")} onSuccess={enterSession} />
         ) : (
           <LoggedOutHome
+            revealPanel={splashRevealing || !showSplash}
             onCreateAccount={() => setAuthView("signup")}
             onLogIn={() => setAuthView("login")}
             onGoogle={() => enterSession(GOOGLE_PROTOTYPE_SESSION)}

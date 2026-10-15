@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { StatusBar } from "./status-bar";
 
 export interface SplashScreenProps {
+  /** Fires when the splash begins its fade-out (login content can enter underneath). */
+  onFadeStart?: () => void;
   /** Called once the splash screen finishes its soft fade-out */
   onComplete?: () => void;
   /** Total duration (ms) before fade-out begins. Default: 2400ms */
   holdDurationMs?: number;
-  /** Fade-out transition duration (ms). Default: 1000ms */
+  /** Fade-out transition duration (ms). Default: 1100ms */
   fadeOutDurationMs?: number;
 }
 
@@ -100,12 +102,19 @@ const LEAF_STEM_PATH =
  * - Logo fades in as one mark, then the screen softly fades out
  */
 export function SplashScreen({
+  onFadeStart,
   onComplete,
   holdDurationMs = 2400,
-  fadeOutDurationMs = 1000,
+  fadeOutDurationMs = 1100,
 }: SplashScreenProps) {
   const [fadingOut, setFadingOut] = useState(false);
   const [exitMs, setExitMs] = useState(fadeOutDurationMs);
+
+  function beginFadeOut() {
+    if (fadingOut) return;
+    setFadingOut(true);
+    onFadeStart?.();
+  }
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -113,7 +122,7 @@ export function SplashScreen({
     setExitMs(nextExitMs);
 
     const fadeTimer = window.setTimeout(() => {
-      setFadingOut(true);
+      beginFadeOut();
     }, holdDurationMs);
 
     const doneTimer = window.setTimeout(() => {
@@ -124,11 +133,11 @@ export function SplashScreen({
       window.clearTimeout(fadeTimer);
       window.clearTimeout(doneTimer);
     };
-  }, [holdDurationMs, fadeOutDurationMs, onComplete]);
+  }, [holdDurationMs, fadeOutDurationMs, onComplete, onFadeStart]);
 
   function handleSkip() {
     if (fadingOut) return;
-    setFadingOut(true);
+    beginFadeOut();
     window.setTimeout(() => {
       onComplete?.();
     }, exitMs);
