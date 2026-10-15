@@ -157,6 +157,116 @@
   top: 317px;
 }
 
+/* Logged-out landing (Figma 83:13757 — login new) */
+.food-auth-home {
+  --food-auth-panel-bg: #fffbf9;
+  --food-auth-separator: #c9c5bf;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+  background: var(--color-background-canvas);
+}
+
+[data-theme="dark"] .food-auth-home {
+  --food-auth-panel-bg: var(--color-background-subtle);
+  --food-auth-separator: var(--color-border-default);
+}
+
+.food-auth-home__doodles {
+  position: absolute;
+  left: -386px;
+  top: -58px;
+  width: 868px;
+  height: 715px;
+  max-width: none;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+.food-auth-home__logo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding-top: 214px;
+  padding-inline: 24px;
+}
+
+.food-auth-home__panel {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  min-height: 356px;
+  box-sizing: border-box;
+  padding: 28px 24px 24px;
+  border-radius: 28px 28px 0 0;
+  background: var(--food-auth-panel-bg);
+}
+
+.food-auth-home__heading {
+  margin: 0;
+  text-align: center;
+  font-size: 20px;
+  font-weight: var(--font-weight-semibold, 600);
+  line-height: normal;
+  color: var(--color-text-primary);
+}
+
+.food-auth-home__heading span {
+  display: block;
+}
+
+.food-auth-home__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.food-auth-home__cta.evolve-button {
+  height: 56px;
+  min-height: 56px;
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.food-auth-home__login.evolve-button {
+  height: 48px;
+  min-height: 48px;
+  font-size: var(--font-size-body-base, 16px);
+  line-height: 24px;
+}
+
+.food-auth-home__separator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-inline-md, 12px);
+  width: 100%;
+  height: 20px;
+}
+
+.food-auth-home__separator-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--food-auth-separator);
+}
+
+.food-auth-home__separator-label {
+  flex-shrink: 0;
+  font-size: var(--font-size-body-sm, 14px);
+  font-weight: var(--font-weight-regular, 400);
+  line-height: normal;
+  color: var(--color-text-secondary);
+}
+
 .food-auth-field input[aria-invalid="true"],
 .food-auth-field input[aria-invalid="true"]:focus {
   border: var(--border-emphasis, 1.5px) solid var(--color-status-error-border) !important;

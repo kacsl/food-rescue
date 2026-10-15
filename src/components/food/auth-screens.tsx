@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Separator } from "valere-DS";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Button, IconButton } from "@/components/ds/button";
 import { Logo } from "@/components/ds/logo";
 import { ChevronLeftIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
@@ -20,6 +19,28 @@ type HomeProps = {
   onLogIn: () => void;
 };
 
+const authGoogleButtonStyle: CSSProperties = {
+  width: "100%",
+  "--button-color": "var(--color-text-primary)",
+  "--button-hover-color": "var(--color-text-primary)",
+  "--button-active-color": "var(--color-text-primary)",
+  "--button-background": "var(--color-background-surface)",
+  "--button-hover-background": "var(--color-background-subtle)",
+  "--button-active-background": "var(--color-background-muted)",
+  "--button-border-color": "var(--food-auth-separator, #c9c5bf)",
+  "--button-hover-border-color": "var(--food-auth-separator, #c9c5bf)",
+  "--button-active-border-color": "var(--color-border-default)",
+} as CSSProperties;
+
+const authLoginLinkStyle: CSSProperties = {
+  width: "100%",
+  "--button-color": "var(--color-text-primary)",
+  "--button-hover-color": "var(--color-text-primary)",
+  "--button-active-color": "var(--color-text-primary)",
+  "--button-hover-background": "transparent",
+  "--button-active-background": "transparent",
+} as CSSProperties;
+
 type FormProps = {
   onBack: () => void;
   onSwitch: () => void;
@@ -28,47 +49,55 @@ type FormProps = {
 
 export function LoggedOutHome({ onCreateAccount, onGoogle, onLogIn }: HomeProps) {
   return (
-    <div style={{ display: "flex", flex: 1, flexDirection: "column", minHeight: "100%" }}>
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 40,
-          paddingInline: 24,
-          textAlign: "center",
-        }}
-      >
+    <div className="food-auth-home">
+      <img
+        className="food-auth-home__doodles"
+        src="/food/auth/food-doodles.svg"
+        alt=""
+        aria-hidden="true"
+        width={868}
+        height={715}
+      />
+      <div className="food-auth-home__logo">
         <Logo variant="landscape" width={296} height={86} role="img" aria-label="Food Rescue" />
-        <p
-          style={{
-            margin: 0,
-            maxWidth: "24ch",
-            textWrap: "balance",
-            fontSize: 18,
-            lineHeight: 1.4,
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          Find and share surplus food with your neighbors
-        </p>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "0 17px 24px" }}>
-        <Button variant="Primary" size="LG" label="Create account" onClick={onCreateAccount} style={{ width: "100%" }} />
-        <div aria-hidden="true">
-          <Separator label="or" />
+      <section className="food-auth-home__panel" aria-labelledby="food-auth-home-heading">
+        <h1 id="food-auth-home-heading" className="food-auth-home__heading">
+          <span>Find and share surplus</span>
+          <span>food with your neighbors</span>
+        </h1>
+        <div className="food-auth-home__actions">
+          <Button
+            variant="Primary"
+            size="LG"
+            label="Create account"
+            onClick={onCreateAccount}
+            className="food-auth-home__cta"
+            style={{ width: "100%" }}
+          />
+          <div className="food-auth-home__separator" aria-hidden="true">
+            <span className="food-auth-home__separator-rule" />
+            <span className="food-auth-home__separator-label">or</span>
+            <span className="food-auth-home__separator-rule" />
+          </div>
+          <Button
+            variant="Outline"
+            size="LG"
+            label="Continue with Google"
+            onClick={onGoogle}
+            className="food-auth-home__cta food-auth-home__google"
+            style={authGoogleButtonStyle}
+          />
+          <Button
+            variant="Ghost"
+            size="MD"
+            label="Already have an account? Log in"
+            onClick={onLogIn}
+            className="food-auth-home__login"
+            style={authLoginLinkStyle}
+          />
         </div>
-        <Button variant="Outline" size="LG" label="Continue with Google" onClick={onGoogle} style={{ width: "100%" }} />
-        <Button
-          variant="Link secondary"
-          size="SM"
-          label="Already have an account? Log in"
-          onClick={onLogIn}
-          style={{ width: "100%" }}
-        />
-      </div>
+      </section>
     </div>
   );
 }
