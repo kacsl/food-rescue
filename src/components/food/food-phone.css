@@ -363,6 +363,201 @@
 }
 
 /* =========================================================================
+   FEED SKELETON (soft shimmer while tab data loads)
+   ========================================================================= */
+
+.food-skeleton {
+  background: linear-gradient(
+    105deg,
+    var(--color-background-muted, #f2f2f6) 0%,
+    color-mix(in srgb, var(--color-background-muted, #f2f2f6) 55%, var(--color-background-surface, #fff)) 42%,
+    var(--color-background-muted, #f2f2f6) 78%
+  );
+  background-size: 220% 100%;
+  animation: foodSkeletonShimmer 1.55s ease-in-out infinite;
+}
+
+.food-feed-skeleton > div > div {
+  animation: foodFeedSkeletonFade 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.food-feed-skeleton > div > div:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.food-feed-skeleton > div > div:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.food-feed-skeleton > div > div:nth-child(4) {
+  animation-delay: 210ms;
+}
+
+@keyframes foodSkeletonShimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes foodFeedSkeletonFade {
+  0% {
+    opacity: 0.55;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-skeleton {
+    animation: none;
+    background: var(--color-background-muted, #f2f2f6);
+  }
+
+  .food-feed-skeleton > div > div {
+    animation: none;
+  }
+}
+
+/* =========================================================================
+   SEARCH EMPTY STATE (Figma 86:21207)
+   ========================================================================= */
+
+.food-search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  min-height: 360px;
+  padding-block: 24px 32px;
+  box-sizing: border-box;
+}
+
+.food-search-empty__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.food-search-empty__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: var(--font-weight-semibold, 600);
+  line-height: normal;
+  color: var(--color-text-secondary);
+}
+
+.food-search-empty__description {
+  margin: 0;
+  max-width: 32ch;
+  font-size: var(--font-size-body-base, 16px);
+  font-weight: var(--font-weight-regular, 400);
+  line-height: normal;
+  text-wrap: balance;
+}
+
+.food-search-empty__art {
+  display: block;
+  width: 132px;
+  height: 192px;
+  flex-shrink: 0;
+}
+
+.food-search-empty__clear.evolve-button {
+  width: auto;
+  align-self: center;
+  height: 56px;
+  min-height: 56px;
+  padding-inline: var(--space-inset-lg, 24px);
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.food-donations-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-inline: 24px;
+  padding-top: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.food-donations-section__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.food-search-slot {
+  position: relative;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.food-search-slot--compact {
+  margin-top: 0;
+}
+
+.food-search-slot__input {
+  width: 100%;
+  height: 44px;
+  padding-inline: 16px;
+  padding-right: 40px;
+  box-sizing: border-box;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--food-field-glass-bg);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-body-base);
+  outline: none;
+}
+
+.food-search-slot__input:focus {
+  border: var(--border-emphasis, 1.5px) solid var(--color-border-focus);
+}
+
+.food-search-slot__clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  background: transparent;
+  color: var(--color-icon-muted, #75757d);
+  cursor: pointer;
+}
+
+.food-search-slot__clear:hover {
+  background: var(--color-background-muted, #f2f2f6);
+  color: var(--color-icon-primary, #303036);
+}
+
+.food-search-slot__clear:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+/* =========================================================================
    SOFT PAGE-TO-PAGE ANIMATIONS
    ========================================================================= */
 

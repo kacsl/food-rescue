@@ -28,8 +28,15 @@ import {
   type FoodNotification,
 } from "@/components/food/panels";
 import { StoreNavIcon, BagNavIcon } from "@/components/ds/bottom-nav";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { LoggedOutHome, LoginScreen, SignUpScreen } from "@/components/food/auth-screens";
 import { FoodToastProvider, FoodToastViewport, useFoodToast } from "@/components/food/food-toast";
+import {
+  DonationsFeedSkeleton,
+  NearbyFeedSkeleton,
+  NotificationsFeedSkeleton,
+} from "@/components/food/feed-skeletons";
+import { SearchEmptyState } from "@/components/food/search-empty-state";
 import {
   clearFoodSession,
   GOOGLE_PROTOTYPE_SESSION,
@@ -37,6 +44,24 @@ import {
   writeFoodSession,
   type FoodSession,
 } from "@/components/food/auth-session";
+
+const FEED_LOAD_MS = 720;
+
+function useMainFeedLoading(active: boolean, screen: FoodScreen) {
+  const [loading, setLoading] = useState(active);
+
+  useEffect(() => {
+    if (!active) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const timer = window.setTimeout(() => setLoading(false), FEED_LOAD_MS);
+    return () => window.clearTimeout(timer);
+  }, [active, screen]);
+
+  return loading;
+}
 
 const INITIAL_NEARBY: NearbyFood[] = [
   {
@@ -211,6 +236,13 @@ const INITIAL_NOTIFICATIONS: FoodNotification[] = [
 
 function matches(title: string, query: string) {
   return title.toLowerCase().includes(query.trim().toLowerCase());
+}
+
+function donationSectionTitle(tab: DonationTab, count: number) {
+  const padded = String(count).padStart(2, "0");
+  if (tab === "open") return `${padded} open donations`;
+  if (tab === "closed") return `${padded} closed donations`;
+  return `${padded} donations`;
 }
 
 export default function FoodPage() {
@@ -617,6 +649,7 @@ function FoodApp() {
   ) : null;
 
   const loggedIn = Boolean(session);
+  const feedLoading = useMainFeedLoading(loggedIn, screen);
 
   function enterSession(next: FoodSession) {
     writeFoodSession(next);
@@ -723,6 +756,7 @@ function FoodApp() {
       ) : screen === "nearby" ? (
         <NearbyView
           items={nearbyVisible}
+          loading={feedLoading}
           query={query}
           searchOpen={searchOpen}
           onToggleSearch={toggleSearch}
@@ -734,6 +768,11 @@ function FoodApp() {
       ) : screen === "donations" ? (
         <DonationsView
           items={donationVisible}
+          loading={feedLoading}
+          query={query}
+          searchOpen={searchOpen}
+          onToggleSearch={toggleSearch}
+          onQuery={setQuery}
           tab={tab}
           onTab={setTab}
           onOpen={setDonationItem}
@@ -742,6 +781,7 @@ function FoodApp() {
       ) : (
         <NotificationsView
           items={notificationsVisible}
+          loading={feedLoading}
           filter={notifFilter}
           unreadCount={unreadCount}
           onFilter={setNotifFilter}
@@ -758,6 +798,7 @@ function FoodApp() {
 
 function NearbyView({
   items,
+  loading,
   query,
   searchOpen,
   onToggleSearch,
@@ -767,6 +808,7 @@ function NearbyView({
   displayName,
 }: {
   items: NearbyFood[];
+  loading?: boolean;
   query: string;
   searchOpen: boolean;
   onToggleSearch: () => void;
@@ -775,6 +817,8 @@ function NearbyView({
   onOpenProfile: () => void;
   displayName: string;
 }) {
+  const searchNoResults = Boolean(query.trim() && !loading && items.length === 0);
+
   return (
     <>
       <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
@@ -789,19 +833,27 @@ function NearbyView({
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              {query.trim()
-                ? `${String(items.length).padStart(2, "0")} matches`
-                : `${String(items.length).padStart(2, "0")} options nearby`}
-            </h2>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: searchNoResults ? "flex-end" : "space-between" }}>
+            {!searchNoResults ? (
+              <h2 style={{ margin: 0, fontSize: "var(--font-size-body-base)", fontWeight: 600, whiteSpace: "nowrap" }}>
+                {loading
+                  ? "Loading nearby…"
+                  : query.trim()
+                    ? `${String(items.length).padStart(2, "0")} matches`
+                    : `${String(items.length).padStart(2, "0")} options nearby`}
+              </h2>
+            ) : null}
             <SearchField open={searchOpen} onToggle={onToggleSearch} />
           </div>
           <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} />
         </div>
 
-        {items.length === 0 ? (
-          <Empty>No food nearby matches your search.</Empty>
+        {loading ? (
+          <NearbyFeedSkeleton />
+        ) : items.length === 0 && query.trim() ? (
+          <SearchEmptyState onClear={() => onQuery("")} />
+        ) : items.length === 0 ? (
+          <Empty>No food nearby right now. Check back soon.</Empty>
         ) : (
           items.map((item) => <NearbyCard key={item.id} item={item} onOpen={onOpen} />)
         )}
@@ -812,12 +864,22 @@ function NearbyView({
 
 function DonationsView({
   items,
+  loading,
+  query,
+  searchOpen,
+  onToggleSearch,
+  onQuery,
   tab,
   onTab,
   onOpen,
   onCreate,
 }: {
   items: Donation[];
+  loading?: boolean;
+  query: string;
+  searchOpen: boolean;
+  onToggleSearch: () => void;
+  onQuery: (value: string) => void;
   tab: DonationTab;
   onTab: (tab: DonationTab) => void;
   onOpen: (item: Donation) => void;
@@ -825,17 +887,54 @@ function DonationsView({
 }) {
   const emptyCopy =
     tab === "open" ? "No open donations yet." : tab === "closed" ? "No closed donations yet." : "No donations yet.";
+  const searchNoResults = Boolean(query.trim() && !loading && items.length === 0);
 
   return (
     <>
-      <header style={{ display: "flex", flexDirection: "column", gap: 8, padding: 24, paddingBottom: 16 }}>
-        <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>My donations</h1>
+      <header style={{ display: "flex", flexDirection: "column", gap: 16, padding: 24, paddingBottom: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <h1 style={{ margin: 0, fontSize: "var(--font-size-heading-lg)", fontWeight: 600 }}>My donations</h1>
+          <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "var(--font-size-body-base)" }}>
+            Turn extra food into instant impact.
+          </p>
+          <DonationTabs value={tab} onChange={onTab} />
+        </div>
       </header>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
-        <DonationTabs value={tab} onChange={onTab} />
+      <section className="food-donations-section">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: searchNoResults ? "flex-end" : "space-between",
+            width: "100%",
+          }}
+        >
+          {!searchNoResults ? (
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "var(--font-size-body-base, 16px)",
+                fontWeight: 600,
+                color: "var(--color-text-primary)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {loading ? "Loading donations…" : donationSectionTitle(tab, items.length)}
+            </h2>
+          ) : null}
+          <SearchField open={searchOpen} onToggle={onToggleSearch} />
+        </div>
 
-        {items.length === 0 ? (
+        {searchOpen ? (
+          <SearchSlot open={searchOpen} query={query} onToggle={onToggleSearch} onQuery={onQuery} compact />
+        ) : null}
+
+        {loading ? (
+          <DonationsFeedSkeleton />
+        ) : items.length === 0 && query.trim() ? (
+          <SearchEmptyState onClear={() => onQuery("")} />
+        ) : items.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", paddingBlock: 24 }}>
             <Empty>{emptyCopy}</Empty>
             {onCreate ? (
@@ -858,7 +957,11 @@ function DonationsView({
             ) : null}
           </div>
         ) : (
-          items.map((item) => <ListingCard key={item.id} item={item} onOpen={onOpen} />)
+          <div className="food-donations-section__cards">
+            {items.map((item) => (
+              <ListingCard key={item.id} item={item} onOpen={onOpen} />
+            ))}
+          </div>
         )}
       </section>
     </>
@@ -867,6 +970,7 @@ function DonationsView({
 
 function NotificationsView({
   items,
+  loading,
   filter,
   unreadCount,
   onFilter,
@@ -874,6 +978,7 @@ function NotificationsView({
   onOpen,
 }: {
   items: FoodNotification[];
+  loading?: boolean;
   filter: "all" | "unread";
   unreadCount: number;
   onFilter: (filter: "all" | "unread") => void;
@@ -920,7 +1025,9 @@ function NotificationsView({
       </header>
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16, paddingInline: 24 }}>
-        {items.length === 0 ? (
+        {loading ? (
+          <NotificationsFeedSkeleton />
+        ) : items.length === 0 ? (
           <Empty>{filter === "unread" ? "No unread notifications." : "No notifications."}</Empty>
         ) : (
           items.map((item) => {
@@ -1025,38 +1132,38 @@ function NotificationsView({
   );
 }
 
-function SearchSlot(props: { open: boolean; query: string; onToggle: () => void; onQuery: (value: string) => void }) {
-  const [focused, setFocused] = useState(true);
+function SearchSlot(props: {
+  open: boolean;
+  query: string;
+  onToggle: () => void;
+  onQuery: (value: string) => void;
+  compact?: boolean;
+}) {
   if (!props.open) return null;
   return (
-    <input
-      autoFocus
-      value={props.query}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      onChange={(event) => props.onQuery(event.target.value)}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") props.onToggle();
-      }}
-      placeholder="Search..."
-      aria-label="Search"
-      style={{
-        width: "100%",
-        height: 44,
-        marginTop: 16,
-        paddingInline: 16,
-        borderRadius: "var(--radius-control)",
-        border: focused
-          ? "var(--border-emphasis, 1.5px) solid var(--color-border-focus)"
-          : "1px solid var(--color-border-subtle)",
-        background: "var(--food-field-glass-bg)",
-        color: "var(--color-text-primary)",
-        font: "inherit",
-        fontSize: "var(--font-size-body-base)",
-        outline: "none",
-        boxSizing: "border-box",
-      }}
-    />
+    <div className={props.compact ? "food-search-slot food-search-slot--compact" : "food-search-slot"}>
+      <input
+        autoFocus
+        className="food-search-slot__input"
+        value={props.query}
+        onChange={(event) => props.onQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") props.onToggle();
+        }}
+        placeholder="Search..."
+        aria-label="Search"
+      />
+      {props.query ? (
+        <button
+          type="button"
+          className="food-search-slot__clear"
+          aria-label="Clear search"
+          onClick={() => props.onQuery("")}
+        >
+          <XMarkIcon width={14} height={14} strokeWidth={2} aria-hidden="true" />
+        </button>
+      ) : null}
+    </div>
   );
 }
 
