@@ -17,6 +17,9 @@ export { NewDonationSheet, OptionCard, type DonationPublishPayload };
 
 export type DonationTab = "open" | "closed" | "all";
 
+/** Fixed coordination number for prototype WhatsApp deep links (+5511983724190). */
+const WHATSAPP_PHONE_E164 = "5511983724190";
+
 const TABS: { id: DonationTab; label: string }[] = [
   { id: "open", label: "Open" },
   { id: "closed", label: "Closed" },
@@ -495,7 +498,7 @@ export function ClaimHandoffSheet({
     const text = encodeURIComponent(
       `Hi ${food.host}! I just claimed your ${food.title} on Kari. I'm picking it up for the slot: ${slotLabel}.`,
     );
-    window.open(`https://wa.me/5511988776655?text=${text}`, "_blank");
+    window.open(`https://wa.me/${WHATSAPP_PHONE_E164}?text=${text}`, "_blank");
   }
 
   const isAccepted = mode === "claimed";
@@ -762,7 +765,7 @@ export function DonationDetail({
 
   function openWhatsAppClaimer() {
     const text = encodeURIComponent(`Hi ${item.claimedBy || "there"}! I'm ready for your pickup of ${item.title}.`);
-    window.open(`https://wa.me/5511987654321?text=${text}`, "_blank");
+    window.open(`https://wa.me/${WHATSAPP_PHONE_E164}?text=${text}`, "_blank");
   }
 
   function handleAcceptClaim() {
