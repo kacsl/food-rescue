@@ -942,20 +942,21 @@
   z-index: 4;
 }
 
-/* Centered Logo / Portrait (Figma 44:4870) */
+/* Centered Logo / Portrait (Figma 3087:7383, scaled for splash) */
 .food-splash__logo-portrait {
   position: absolute;
   left: calc(50% - 0.43px);
   top: calc(50% + 0.5px);
-  width: 308.148px;
-  height: 205px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20.866px;
+  width: 309px;
   z-index: 3;
   transform: translate(-50%, -50%);
   animation: splashLogoFade 1100ms cubic-bezier(0.25, 0.1, 0.25, 1) 180ms both;
+}
+
+.food-splash__logo-portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 @keyframes splashLogoFade {
@@ -965,34 +966,6 @@
   100% {
     opacity: 1;
   }
-}
-
-.food-splash__icon-wrap {
-  position: relative;
-  width: 160.872px;
-  height: 143.27px;
-  flex-shrink: 0;
-}
-
-.food-splash__icon-svg {
-  display: block;
-  width: 160.872px;
-  height: 143.27px;
-  overflow: visible;
-}
-
-.food-splash__wordmark-wrap {
-  position: relative;
-  width: 308.148px;
-  height: 40.863px;
-  flex-shrink: 0;
-}
-
-.food-splash__wordmark-svg {
-  display: block;
-  width: 308.148px;
-  height: 40.863px;
-  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
